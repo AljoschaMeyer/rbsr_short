@@ -1,0 +1,121 @@
+% !TEX root = main.tex
+\ProvidesPackage{macros}
+
+\usepackage{amsthm}
+
+
+
+
+
+\newcommand{\defined}[1]{\textit{#1}}
+
+
+\RequirePackage{mathtools}
+\RequirePackage{dsfont}
+\newcommand{\defeq}{\vcentcolon=}
+\newcommand{\eqdef}{=\vcentcolon}
+
+\newcommand{\complexity}[1]{\mathcal{O}(#1)}
+
+\DeclareMathAlphabet{\mymathbb}{U}{bbold}{m}{n}
+\newcommand{\neutraladd}[0]{\mymathbb{0}}
+
+\newcommand{\groupaddsym}[0]{\oplus}
+\newcommand{\biggroupadd}[0]{\bigoplus}
+\newcommand{\groupadd}[2]{{#1} \groupaddsym {#2}}
+\newcommand{\groupsubtract}[2]{{#1} \ominus {#2}}
+\newcommand{\inverseadd}[1]{-{#1}}
+
+\newcommand{\concatenate}[0]{\cdot}
+\newcommand{\abs}[1]{|{#1}|}
+
+\newcommand{\fun}[3]{{#1}: {#2} \rightarrow {#3}}
+\newcommand{\partialfun}[3]{{#1}: {#2} \rightharpoonup{#3}}
+\DeclareMathOperator{\domain}{dom}
+\DeclareMathOperator{\codomain}{codom}
+\newcommand{\set}[1]{\{#1\}}
+\newcommand{\disjointunion}[0]{\dot{\cup}}
+\newcommand{\powerset}[1]{\mathcal{P}({#1})}
+
+\DeclareMathOperator{\lbl}{label}
+
+\newcommand{\N}[0]{\mathds{N}}
+\newcommand{\Np}[0]{\mathds{N}^{+}}
+\newcommand{\Z}[0]{\mathds{Z}}
+
+
+\newcommand{\nil}[0]{\mathtt{nil}}
+\newcommand{\true}[0]{\mathtt{true}}
+
+
+\usepackage{environ}
+\makeatletter
+\newsavebox{\measure@tikzpicture}
+\NewEnviron{scaletikzpicturetowidth}[1]{%
+  \def\tikz@width{#1}%
+  \def\tikzscale{1}\begin{lrbox}{\measure@tikzpicture}%
+  \BODY
+  \end{lrbox}%
+  \pgfmathparse{#1/\wd\measure@tikzpicture}%
+  \edef\tikzscale{\pgfmathresult}%
+  \BODY
+}
+\makeatother
+
+
+
+%environments
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\newtheorem{proposition}{Proposition}
+
+
+
+
+
+
+% domain specific
+\DeclareMathOperator{\enc}{enc}
+\DeclareMathOperator{\h}{h}
+\DeclareMathOperator{\f}{f}
+\DeclareMathOperator{\g}{g}
+\DeclareMathOperator{\m}{m}
+\DeclareMathOperator{\p}{p}
+\DeclareMathOperator{\V}{V}
+\DeclareMathOperator{\xor}{xor}
+\DeclareMathOperator{\priority}{priority}
+
+\newcommand{\lift}[2]{\operatorname{lift_{#1}^{#2}}}
+\newcommand{\liftlabel}[2]{\operatorname{label_{#1}^{#2}}}
+\newcommand{\somewhatmorphism}[0]{tree-friendly function}
+\newcommand{\somewhatmorphisms}[0]{tree-friendly functions}
+
+\newcommand{\tlabel}[1]{\operatorname{lbl_{#1}}}
+\newcommand{\sllabel}[1]{\operatorname{slbl_{#1}}}
+\newcommand{\skipdomain}[0]{\operatorname{domain}}
+
+\newcommand{\range}[3]{[{#1},{#2})_{#3}}
+\newcommand{\rangex}[3]{({#1},{#2})_{#3}}
+\newcommand{\fp}[1]{\operatorname{fp}(#1)}
+\newcommand{\fpname}[0]{\operatorname{fp}}
+\newcommand{\ifpmanual}[3]{\bigl({#1}, {#2}, {#3}\bigr)}
+\newcommand{\ifp}[3]{\ifpmanual{#1}{#2}{\fp{\range{#1}{#2}{#3}}}}
+\newcommand{\iis}[4]{({#1}, {#2}, {#3}, {#4})}
+\newcommand{\iisnatural}[4]{({#1}, {#2}, \range{#1}{#2}{#3}{#4})}
+\newcommand{\ifpempty}[2]{({#1}, {#2})}
+\newcommand{\ifpsingle}[2]{\ifpmanual{#1}{#2}{\emptyset}}
+\newcommand{\ifpcontain}[3]{\ifpmanual{#1}{#2}{\groupadd{\fp{x}}{#3}}}
+
+\newcommand{\successor}[1]{\operatorname{successor({#1})}}
+
+\newcommand{\cp}[1]{\chi_{#1}(Z)}
+
+%\newcommand{\tl}[1]{{#1}\mathtt{.left}}
+%\newcommand{\tv}[1]{{#1}\mathtt{.value}}
+%\newcommand{\tr}[1]{{#1}\mathtt{.right}}
+\newcommand{\tl}[1]{{#1}\mathtt{.l}}
+\newcommand{\tv}[1]{{#1}\mathtt{.v}}
+\newcommand{\tr}[1]{{#1}\mathtt{.r}}
+\newcommand{\tp}[1]{{#1}\mathtt{.p}}
+\newcommand{\tm}[1]{{#1}\mathtt{.m}}
