@@ -4,7 +4,8 @@
 
 % \documentclass[acmsmall,nonacm,anonymous]{acmart}
 % \documentclass[sigplan,screen,10pt]{acmart}
-\documentclass[journal]{IEEEtran}
+\documentclass[conference]{IEEEtran}
+% \documentclass[journal]{IEEEtran}
 
 %% Rights management information.  This information is sent to you
 %% when you complete the rights form.  These commands have SAMPLE
@@ -90,16 +91,26 @@
 %\newcommand{\examplef}[0]{f}
 %\newcommand{\exampleg}[0]{g}
 %\newcommand{\exampleh}[0]{h}
-\newcommand{\examplea}[0]{\ensuremath{\mathrm{ape}}}
-\newcommand{\exampleb}[0]{\ensuremath{\mathrm{bee}}}
-\newcommand{\examplec}[0]{\ensuremath{\mathrm{cat}}}
-\newcommand{\exampled}[0]{\ensuremath{\mathrm{doe}}}
-\newcommand{\examplee}[0]{\ensuremath{\mathrm{eel}}}
-\newcommand{\examplef}[0]{\ensuremath{\mathrm{fox}}}
-\newcommand{\exampleg}[0]{\ensuremath{\mathrm{gnu}}}
-\newcommand{\exampleh}[0]{\ensuremath{\mathrm{hog}}}
+\newcommand{\examplea}[0]{\ensuremath{\mathrm{a}}}
+\newcommand{\exampleb}[0]{\ensuremath{\mathrm{b}}}
+\newcommand{\examplec}[0]{\ensuremath{\mathrm{c}}}
+\newcommand{\exampled}[0]{\ensuremath{\mathrm{d}}}
+\newcommand{\examplee}[0]{\ensuremath{\mathrm{e}}}
+\newcommand{\examplef}[0]{\ensuremath{\mathrm{f}}}
+\newcommand{\exampleg}[0]{\ensuremath{\mathrm{g}}}
+\newcommand{\exampleh}[0]{\ensuremath{\mathrm{h}}}
 \newcommand{\examplei}[0]{\ensuremath{\examplea}}
-\newcommand{\exampley}[0]{\ensuremath{\mathrm{yak}}}
+\newcommand{\exampley}[0]{\ensuremath{\mathrm{y}}}
+% \newcommand{\examplea}[0]{\ensuremath{\mathrm{ape}}}
+% \newcommand{\exampleb}[0]{\ensuremath{\mathrm{bee}}}
+% \newcommand{\examplec}[0]{\ensuremath{\mathrm{cat}}}
+% \newcommand{\exampled}[0]{\ensuremath{\mathrm{doe}}}
+% \newcommand{\examplee}[0]{\ensuremath{\mathrm{eel}}}
+% \newcommand{\examplef}[0]{\ensuremath{\mathrm{fox}}}
+% \newcommand{\exampleg}[0]{\ensuremath{\mathrm{gnu}}}
+% \newcommand{\exampleh}[0]{\ensuremath{\mathrm{hog}}}
+% \newcommand{\examplei}[0]{\ensuremath{\examplea}}
+% \newcommand{\exampley}[0]{\ensuremath{\mathrm{yak}}}
 
 \newcommand{\hexamplea}[0]{\ensuremath{\h(\mathrm{ape}})}
 \newcommand{\hexampleb}[0]{\ensuremath{\h(\mathrm{bee}})}
@@ -251,7 +262,7 @@ Another use case is that of replication and mirroring in distributed database sy
 
 There exist sophisticated protocols~\cite{eppstein2011s} that solve set reconciliation in a constant number of communication rounds and with communication complexity linear in the size of the symmetric difference. These impressive bounds are provably optimal~\cite{minsky2003set}, but computing the necessary messages requires time and space linear in the size of the local set, even if the symmetric difference is small.
 
-These computational costs can be prohibitive for large sets. We hence look for a solution that bounds computational complexity by the size of the symmetric difference.
+These computational costs can be prohibitive for large sets; also such approaches are conceptually complex and do not discuss how maliciously crafted sets can lead to faulty reconciliation. For reliable practical deployment, we hence look for a conceptualy simple solution with low computational complexity and protection against malicious inputs. We believe that optimizing these metrics can be more important than over-optimizing communication complexity.
 
 \defined{Range-based set reconciliation} has space complexity linear in the size of the symmetric difference of the sets, and time complexity linear in the size of the symmetric difference or the logarithm of the size of the local set, whichever is greater. This comes at the cost of a logarithmic number of communication rounds, as the procedure follows a straightforward divide-and-conquer approach: the sets are sorted according to some total order, and nodes initiate reconciliation by sending the fingerprint of all their local items within a certain range. Upon receiving a pair of range delimiters and a fingerprint, a node computes the fingerprint of all of its own local items within that range. If the fingerprints match, the range has been successfully reconciled. Otherwise the node splits the range into smaller subranges, and initiates reconciliation for these new ranges. Whenever a node receives the fingerprint of the empty set, it transmits all its local items within that range to its peer.
 
@@ -267,16 +278,13 @@ Beyond a more general and precise formulation and a more detailed complexity ana
     \item we survey suitable cryptographic fingerprints.
 \end{itemize}
 
-The organization of this article is as follows: we first review related work in \cref{related-work}. We then state the protocol for range-based reconciliation in \cref{reconciliation} and analyze its complexity. In \cref{sec:computation} we examine possible choices of fingerprints and show how to compute them efficiently. In \cref{secure} we examine how malicious actors can influence reconciliation and survey secure fingerprint functions that can protect against this, before concluding in \cref{conclusion}.
+The organization of this article is as follows. We review related work in \cref{related-work}. We state the protocol for range-based reconciliation in \cref{reconciliation} and analyze its complexity. In \cref{sec:computation} we examine possible choices of fingerprints and show how to compute them efficiently. In \cref{secure} we examine how malicious actors can influence reconciliation and survey secure fingerprint functions that can protect against this, before concluding in \cref{conclusion}.
 
 \section{Related Work}\label{related-work}
 
-Prior mentions of range-based set reconciliation~\cite{chen1999prototype}\cite{shang2017survey} discuss the algorithm only superficially. Our work improves time- and space complexities, captures the full space of possible fingerprint functions, considers collision resistance, and embeds it in the larger context of set reconciliation. To that end, we give an overview of the set reconciliation literature in \cref{related-reconciliation}, and of the existing literature on set fingerprinting in \cref{related-fingerprinting}.
+Prior mentions of range-based set reconciliation~\cite{chen1999prototype}\cite{shang2017survey} discuss the algorithm only superficially. Our work improves time- and space complexities, captures the full space of possible fingerprint functions, considers collision resistance, and embeds it in the larger context of set reconciliation.
 
-\subsection{Set Reconcilliation}
-\label{related-reconciliation}
-
-Most reconciliation literature focuses on reconciliation in a single communication round, at the price of high computational costs. In the following discussion, we consider nodes $\mathcal{X}_0, \mathcal{X}_1$ holding sets $X_0, X_1 \subseteq U$ respectively. $n_{\triangle}$ is the size of the symmetric difference of $X_0$ and $X_1$.
+Most reconciliation literature focuses on reconciliation in a single communication round, at the price of high computational costs. None of the prior work considers maliciously crafted inputs. In the following discussion, we assume nodes $\mathcal{X}_0, \mathcal{X}_1$ holding sets $X_0, X_1 \subseteq U$ respectively. $n_{\triangle}$ is the size of the symmetric difference of $X_0$ and $X_1$.
 
 The seminal work on set reconciliation introduces \defined{characteristic polynomial interpolation} (CPI)~\cite{minsky2003set}. Given an approximation of $n_{\triangle}$, the total number of transmitted bits is proportional to $n_{\triangle}$, which is more efficient than the range-based approach. The required interpolation of polynomials is reduced to performing Gaussian elimination however, which takes $\complexity{n_{\triangle}^3}$ time.
 
@@ -288,70 +296,46 @@ Bounding the error probabilities of the IBLT operations requires a prior estimat
 
 Overall, the IBLT approach achieves set reconciliation in a single round trip, using only $\complexity{n_{\triangle} + \log(\abs{U})}$ bits. The computational cost is however linear in the size of the sets, and the space requirements for the computation are in $\complexity{n_{\triangle}}$.
 
+This work has spawned several other approaches with a constant number of roundtrips and small message size at the cost of at least linear computation time and computation space requirements: transmitting the nodes of a patricia tree in a bloom filter~\cite{byers2002fast}, estimating $n_{\triangle}$ with bloom filters prior to CPI~\cite{tian2011exact}, using counting bloom filters~\cite{guo2012set}, using cuckoo filters~\cite{luo2019set}, or combining IPLTs with regular bloom filters to reduce the message size~\cite{ozisik2019graphene}.
 
-This work has spawned several other approaches with a constant number of roundtrips and small message size at the cost of at least linear computation time and computation space requirements: transmitting the nodes of a patricia tree in a bloom filter~\cite{byers2002fast}, estimating $n_{\triangle}$ with bloom filter prior to CPI~\cite{tian2011exact}, using counting bloom filters~\cite{guo2012set}, using cuckoo filters~\cite{luo2019set}, or combining IPLTs with regular bloom filters to reduce the message size~\cite{ozisik2019graphene}.
+\defined{Partition reconciliation}~\cite{minsky2002practical} reconciles in a logarithmic number of rounds to reduce computational load. It attempts CPI for successively smaller subsets, succeeding once the difference between two subsets is sufficiently small.
 
-\cite{minsky2002practical} introduces \defined{partition reconciliation},which reconciles in a logarithmic number of rounds in order to reduce computational load. It builds upon the CPI approach, and attempts reconciliation for successively smaller subsets until it succeeds once the subsets becomes small enough.
+This approach eliminates CPI's cubic scaling of the computation time in $n_{\triangle}$. Reconciliation messages are precomputed in a \defined{partition tree} where a parent node includes subranges as children. Given a balanced partition tree, the reconciliation procedure has the same asymptotic worst-case complexity bounds as ours. The tree is not self-balancing however, so as reconcilliation adds more items to the set, the time complexity of local computations can degrade to $\complexity{n}$. Furthermore, the tree is specific to a particular choice of evaluation points and control points for the characteristic polynomial. When reusing the tree across multiple reconciliation sessions, these points have to be fixed in advance. This could allow an attacker to craft sets for which failed reconciliation is not detected.
 
-This approach eliminates CPI's cubic scaling of the computation time in $n_{\triangle}$. Similar to our auxiliary tree, the authors propose a tree structure of partitions where a parent node includes subranges as children. The reconciliation message for each of these ranges is precomputed and stored within the tree.
-
-Given such a partition tree, the reconciliation procedure has the same asymptotic worst-case complexity bounds as ours. It has performs better on average however: whereas our approach recurses whenever the two ranges that are being compared are unequal, i.e., whenever the size of the symmetric difference is greater than zero, their approach only recurses whenever the size of the symmetric difference is greater than some arbitrary, fixed constant.
-
-The tree can be updated over insertions and deletions in time logarithmic in the height of the tree, but these updates are not balancing. In the worst case, maintaining this auxiliary data structure can thus take time linear in the size of the set per update. Furthermore, the tree is specific to a particular choice of evaluation points and control points for the characteristic polynomial. If the tree is to be reused across multiple reconciliation sessions, these points have to be fixed in advance. This could allow an attacker to craft malicious sets for which a failed reconciliation is not detected. As a consequence, this approach can only be used with the producers of the sets are trusted.\
-
-\cite{auvolat2019merkle} also considers reconciliation in a logarithmic number of rounds, they use pseudorandom Merkle trees, comparable to our \cref{randomization}. Their approach is far less flexible than ours however: reconciliation messages are guided by the tree shape, so the number of recursion steps in each round is fixed, and the maximum number of rounds can degrade to $\complexity{n}$ in the worst case. Our approach leaves complete freedom for the number of recursion steps and guarantees a logarithmic number of communication rounds in the worst case, even when using a pseudorandom tree for fingerprint computations. Their promising experimental evaluation provides a strong indicator that our more efficient approach would also perform well in practice.
-
-\subsection{Fingerprinting Sets}
-\label{related-fingerprinting}
-
-As range-based synchronization relies on fingerprinting sets, we give a small overview of work on the topic.
-
-Merkle trees~\cite{merkle1989certified} introduced the idea of maintaining hashes in a tree to efficiently compute and update a fingerprint. Since the exact shape of the tree determines the root label, unique representations of sets as trees are of interest. \cite{uniquerepresentation} proves the important negative result that unique representations require superlogarithmic time to maintain under insertions and deletions in general. \cite{sundar1994unique} gives logarithmic solutions for sparse or dense sets and points to further deterministic solutions.
-
-Unique representations with probabilistic time complexities that are logarithmic in the expected case have been studied in~\cite{pugh1989incremental}, suggesting hash-tries as a set representation for computing hashes. Pugh also developed skip lists~\cite{pugh1990skip}, a probabilistic set representation not based on trees. \cite{seidel1996randomized} offers treaps, another randomized tree structure. Further study of uniquely represented data structures has been done under the moniker of \textit{history-independent data structures}, including IO-efficient solutions for treaps~\cite{golovin2009b} and skip list~\cite{bender2016anti} in an \textit{external memory} computational model. Using history-independent data structures for defining the fingerprints in a range-based reconciliation scheme is possible in principle, but malicious actors can craft degenerate sets that incur super-logarithmic computation times. Furthermore, such an approach cannot leave the exact choice of set data structure as an implementation detail.
-
-Beyond the comparison of root labels for set equality testing, Merkle trees and their technique of hashing the concatenation of hashes form the basis of many authenticated data structures, ranging from simple balanced trees or treaps~\cite{naor2000certificate}, authenticated maps~\cite{buldas2000accountable}\cite{auvolat2019merkle} and skip lists~\cite{goodrich2000efficient} to more general DAG-based data structures~\cite{martel2004general}.
-
-A different line of authenticated data structures utilizes dynamic accumulators~\cite{camenisch2002dynamic}, small digests for sets that can be efficiently updated under insertion and deletion of items, and which allow computing small certificates that some item has been ingested. \cite{papamanthou2016authenticated} and \cite{papamanthou2011optimal} use accumulators to provide authenticated set data structures that are more efficient than their Merkle-tree-based counterparts. Accumulators are stronger than necessary for the range-based synchronization approach, so they are not discussed in our main text.
-
-Orthogonal to these lines of research are algebraic approaches. The earliest mention of hashing into a group and performing computations on hashes to compactly store information about sets that we could find is in~\cite{wegman1981new}. They provide probabilistic set equality testing, but without maintaining any tree structure, effectively anticipating (cryptographically insecure) homomorphic set fingerprinting.
-
-The first investigation of the cryptographic security of this approach was done in the seminal~\cite{bellare1997new}, albeit in the slightly less natural context of sequences rather than sets, with the additive hash being broken in~\cite{wagner2002generalized} and~\cite{lyubashevsky2005parity}. Multiset homomorphic terminology is due to~\cite{clarke2003incremental}; \cite{cathalo2009comparing},~\cite{maitin2017elliptic} and~\cite{lewi2019securing} give further constructions.
-
-The generalized hash tree of~\cite{papamanthou2013streaming} extends the idea of combining hashes via a binary operation to operations that are not closed, instead the output is mapped back into the original domain by a separate function. These ``compressed'' outputs are then arranged in a tree; this technique allows using the algebraic approach for authenticated data structures.
+The \defined{Merkle Search Tree CRDT}~\cite{auvolat2019merkle} is similar to our approach, but using a pseudorandom tree construction. This enforces a rigid set representation and can degrade to a linear number of communication rounds for maliciously crafted sets. Our approach allows for free choice of search tree structure and number of recursion steps, guaranteeing a logarithmic number of communication rounds in the worst case.
 
 \section{Recursive Reconciliation}\label{reconciliation}
 
-In this section, we describe the communication that goes into a range-based set reconciliation session, while deferring the details of fingerprint computations to \cref{sec:computation}. 
+We now describe the communication side of a range-based set reconciliation session, while deferring the details of fingerprint computations to \cref{sec:computation}. 
 
-We consider the setting of two nodes \peer{0} and \peer{1} that are connected via a bidirectional, reliable, ordered communication channel. We assume that an arbitrary number of bits can be sent in a single, unit-length communication round. The nodes initially hold sets $X_0$ and $X_1$ respectively, and after reconciliation, both will hold $X_0 \cup X_1$.
+We consider two nodes \peer{0} and \peer{1}, connected via a bidirectional, reliable, ordered communication channel. They can send an arbitrary number of bits in a single, unit-length communication round. The nodes initially hold sets $X_0$ and $X_1$ respectively. After reconciliation, both will hold $X_0 \cup X_1$.
 
-$X_0$ and $X_1$ are drawn from some universe $U$, which is ordered by a total order $\preceq$. To allow meaningful statements about communication complexity, we require every element from $U$ to be transmittable using a bounded number of bits, that is, we require $U$ to be finite. This can always be achieved in practice by reconciling hashes of items rather than items themselves.
+$X_0$ and $X_1$ are drawn from some universe $U$, which is ordered by a total order $\preceq$. To allow meaningful statements about communication complexity, we require encodings of bounded size for the members of $U$, i.e., we require $U$ to be finite. This can always be achieved in practice by reconciling hashes of items rather than items themselves.
 
-We finally assume that there is a fingerprinting function $\fun{\fpname}{\powerset{U}}{H}$ that maps arbitrary subsets of $U$ (and hence also of  $X_0$ and $X_1$) into some finite codomain $H$ with negligible probability of collisions. We discuss such functions in detail in \cref{sec:computation}.
+We finally fix a fingerprinting function $\fun{\fpname}{\powerset{U}}{H}$ that maps subsets of $U$ into some finite codomain $H$ with negligible probability of collisions.
 
-Before we can define the message exchange, we need some formal definitions and terminology for talking about ranges:
+We use the following notation and terminology for \defined{ranges}:
 
-\begin{definition}[Range]
+\begin{definition}
 \label{def:ranges}
 Let $S \subseteq U$  and $x, y \in U$.
 
-The \defined{range from $x$ to $y$ in $S$}, denoted by $\range{x}{y}{S}$, is the set $\set{s \in S \mid x \preceq s \prec y}$ if $x \prec y$, or $S \setminus \range{y}{x}{S}$ if $y \prec x$, or simply $S$ if $x = y$. We call $x$ the \defined{lower boundary} and $y$ the \defined{upper boundary} of the range (even if $y \preceq x$).
+The \defined{range from $x$ to $y$ in $S$}, denoted by $\range{x}{y}{S}$, is the set $\set{s \in S \mid x \preceq s \prec y}$ if $x \prec y$, or $S \setminus \range{y}{x}{S}$ if $y \prec x$, or simply $S$ if $x = y$. We call $x$ the \defined{lower boundary} and $y$ the \defined{upper boundary} of the range (even if $y \prec x$).
 \end{definition}
 
-Note that $x$ and $y$ need not be elements of $S$ themselves.
+% Note that $x$ and $y$ need not be elements of $S$ themselves.
 
 \subsection{Protocol Description}
 
-In a given communication round, a node receives information about some subranges of the sets to be reconciled: for each subrange in question, it receives either a fingerprint which depends exactly on which items the other node holds within that subrange, or it receives specific items within that subrange that need to be reconciled. The node then answers by supplying its own information, further partitioning ranges into arbitrarily many subranges if neither the received fingerprint matches the fingerprint of the local items within that range nor the range contains few enough items to transmit them directly. We precisely specify the vocabulary by which nodes exchange information in \cref{def:messages}:
+In a given communication round, a node receives information about some subranges of the sets to be reconciled. For each such subrange, it receives either a fingerprint of the items the other node has in that range, or it receives those items directly. The node answers with information about new ranges; partitioning ranges into subranges if neither the received fingerprint matches the fingerprint of the local items within that range nor the range contains few enough items to transmit them directly. We precisely specify the vocabulary by which nodes exchange information in \cref{def:messages}:
 
-\begin{definition}[Message]
+\begin{definition}
 \label{def:messages}
 Let \peer{i} be a node that holds a set $X_i \subseteq U$.
 
 A \defined{range fingerprint} is a triplet $\ifp{x}{y}{X_i}$ for $x, y \in U$. It conveys the fingerprint over the range from $x$ to $y$ in $X_i$.
 
-A \defined{range item set} is a four-tuple $\iis{x}{y}{S}{b}$ for $x, y \in U$, $S \subseteq \range{x}{y}{X_i}$, and $b \in \{0, 1\}$. It transmits items within the range from $x$ to $y$ in $X_i$. The boolean flag signals whether the other node should respond with its local items from $x$ to $y$ as well ($b = 0$), or whether these have already been received ($b = 1$).
+A \defined{range item set} is a four-tuple $\iis{x}{y}{S}{b}$ for $x, y \in U$, $S \subseteq \range{x}{y}{X_i}$, and $b \in \{0, 1\}$. It transmits items within the range from $x$ to $y$ in $X_i$. The boolean signals whether the other node should respond with its local items from $x$ to $y$ ($b = 0$), or whether these have already been received ($b = 1$).
  
 A \defined{message part} is either a range fingerprint or a range item set. A \defined{message} is a nonempty sequence of message parts. 
 \end{definition}
@@ -363,7 +347,7 @@ A \defined{message part} is either a range fingerprint or a range item set. A \d
 \Crefname{protocol}{Protocol}{Protocols}
 \crefname{protocol}{protocol}{protocols}
 
-In order to initiate reconciliation, a node sends a message consisting solely of a range fingerprint $\ifp{x}{x}{X_i}$ for some $x \in U$. The nodes can then reconcile their sets by following \cref{protocol:rbsr}:
+A node initiates reconciliation by sending a message containing a single range fingerprint $\ifp{x}{x}{X_i}$ for some $x \in U$. The nodes then run \cref{protocol:rbsr}:
 
 \begin{protocol}[Range-Based Set Reconciliation]
 \label{protocol:rbsr}
@@ -372,13 +356,12 @@ Let \peer{i} be a node that holds a set $X_i \subseteq U$ and that has just rece
 
 \begin{enumerate}
     \item[1)] Initialize an empty response.
-    \item[2)] For every range item set $\iis{x}{y}{S}{b}$ in the message, add $S$ to $X_i$. If $b = 0$ and $\range{x}{y}{X_i} \setminus S \neq \emptyset$, add the range item set $\iis{x}{y}{\range{x}{y}{X_i} \setminus S}{1}$ to the response.
+    \item[2)] For every range item set $\iis{x}{y}{S}{b}$ in the message, add $S$ to $X_i$. Add the range item set $\iis{x}{y}{\range{x}{y}{X_i} \setminus S}{1}$ to the response unless that set is empty or $b = 0$.
     \item[3)] For every range fingerprint $\ifp{x}{y}{X_j}$ in the message, do one of the following:
         \begin{enumerate}
             \item[] \textbf{Case 1, Equal Fingerprints:}\newline
 			If $\fp{\range{x}{y}{X_j}} = \fp{\range{x}{y}{X_i}}$, do nothing.
-            \item[] \textbf{Case 2, Recursion Anchor:} You may add the range items set $\iisnatural{x}{y}{X_i}{0}$ to the response.\newline
-			If $\abs{\range{x}{y}{X_i}} \leq 1$ or $\fp{\range{x}{y}{X_j}} = \fp{\emptyset}$, you must do so.
+            \item[] \textbf{Case 2, Recursion Anchor:} You may add the range items set $\iisnatural{x}{y}{X_i}{0}$ to the response. If $\abs{\range{x}{y}{X_i}} \leq 1$ or $\fp{\range{x}{y}{X_j}} = \fp{\emptyset}$, always do so.
             \item[] \textbf{Case 3, Recurse:} Otherwise, select $m_0 \defeq x \prec m_1 \prec \ldots \prec m_k \defeq y$ from $U$, $k \geq 2$, such that $\abs{\range{m_l}{m_{l + 1}}{X_i}} < \abs{\range{x}{y}{X_i}}$ for all $0 \leq l < k$. For all $0 \leq l < k$ add either the range fingerprint $\ifp{m_l}{m_{l + 1}}{X_i}$ or the range item set $\iisnatural{m_l}{m_{l + 1}}{X_i}{0}$ to the response.
         \end{enumerate}
     \item[4)] If the accumulated response is nonempty, send it. Otherwise terminate successfully.
@@ -387,13 +370,15 @@ Let \peer{i} be a node that holds a set $X_i \subseteq U$ and that has just rece
 
 \Cref{simple-set-reconciliation-example} visualizes an example run of the protocol.
 
+The recursion anchor essentially runs the trivial reconciliation protocol of simply exchanging sets. One could use more sophisticated single-roundtrip protocols instead. For simplicity, we only discuss \cref{protocol:rbsr} as presented, but range-based reconciliation can essentially function as a general preprocessing mechanism for bounding the computational complexity of arbitrary reconciliation protocols.
+
 \begin{figure*}
 $X_0 \defeq \{\exampleb, \examplec, \exampled, \examplee, \examplef, \exampleh \}$
 \hfill
 $X_1 \defeq \{\examplea, \examplee, \examplef, \exampleg\}$
 
 \begin{scaletikzpicturetowidth}{\textwidth}
-\begin{tikzpicture}[scale=\tikzscale, font=\tiny]
+\begin{tikzpicture}[scale=\tikzscale, yscale=0.8, font=\small]
 	\pgfdeclarelayer{background}
 	\pgfdeclarelayer{foreground}
 	\pgfsetlayers{background,main,foreground}
@@ -433,15 +418,15 @@ $X_1 \defeq \{\examplea, \examplee, \examplef, \exampleg\}$
 \end{scaletikzpicturetowidth}
 
 \caption[Detailed synchronization example]{
-An example run of \cref{protocol:rbsr}. In this and further examples, $U \defeq \set{\examplea, \exampleb, \examplec, \exampled, \examplee, \examplef, \exampleg, \exampleh}$, and $\preceq$ orders the universe alphabetically. Range fingerprints have sharp corners, range item sets have rounded corners. The arrows in the background indicate which node is sending and which node is receiving.
+An example run of \cref{protocol:rbsr}. In this and further examples, $U \defeq \set{\examplea, \exampleb, \examplec, \exampled, \examplee, \examplef, \exampleg, \exampleh}$, and $\preceq$ orders the universe alphabetically. Range fingerprints have sharp corners, range item sets have rounded corners. The arrows in the background indicate sending and receiving node.
 
 \peer{1} initiates reconciliation over the full universe, transmitting the fingerprint of $X_1$.
 
 Upon receiving this range fingerprint, \peer{0} locally computes $\fp{\range{\examplea}{\examplei}{X_0}}$. Because the result does not match the received fingerprint, \peer{0} splits $X_0$ into two parts of equal size and transmits range fingerprints for these subranges.
 
-In the third round, \peer{1} locally computes fingerprints for the two received ranges, but neither matches. Because $\abs{\range{\examplea}{\examplee}{X_1}} \leq 1$, \peer{1} transmits the corresponding range items set  $\iis{\examplea}{\examplee}{\examplea}{0}$. For the other range, we have that $\abs{\range{\examplee}{\examplei}{X_1}} > 1$ however, so another recursion step can be performed. After splitting the range, the lower range contains enough items to send another range fingerprint. The upper range however only contains one item, thus \peer{1} handles it by sending a range item set.
+In the third round, \peer{1} locally computes fingerprints for the two received ranges, but neither matches. Because $\abs{\range{\examplea}{\examplee}{X_1}} \leq 1$, \peer{1} transmits the corresponding range items set  $\iis{\examplea}{\examplee}{\examplea}{0}$. For the other range, $\abs{\range{\examplee}{\examplei}{X_1}} > 1$ however, so another recursion step can be performed. After splitting the range, the lower range contains enough items to send another range fingerprint. The upper range however only contains one item, thus \peer{1} handles it by sending a range item set.
 
-In the fourth and final communication round, \peer{0} receives the two range item sets and answers with the items it holds within those ranges. For the range fingerprint $\ifp{\examplee}{\exampleg}{X_1}$, it computes an equal fingerprint $\fp{\range{\examplee}{\exampleg}{X_0}}$, so that range can be considered successfully reconciled without transmitting any more data.
+In the final communication round, \peer{0} receives the two range item sets and answers with the items it holds within those ranges. For the range fingerprint $\ifp{\examplee}{\exampleg}{X_1}$, it computes an equal fingerprint $\fp{\range{\examplee}{\exampleg}{X_0}}$, so no response is required.
 }
 
 \label{simple-set-reconciliation-example}
@@ -449,41 +434,36 @@ In the fourth and final communication round, \peer{0} receives the two range ite
 
 \subsection{Range-Base Set Mirroring}
 
-Set mirroring is the problem of efficiently transferring a set from a \defined{primary} node to a \defined{replica} node, utilizing similarities between the primary's set and an older version that is stored on the replica. \Cref{protocol:rbsr} can be used with very little modification in order to give a set mirroring protocol. The primary node simply runs \cref{protocol:rbsr} as-is, and the replica node runs a slightly modified version: whenever it receives a range item set $\iis{x}{y}{S}{b}$, it removes from its local set $X_i$ all items in $\range{x}{y}{X_i} \setminus S$; and whenever it sends a range item set itself, it sends the empty set.
+Set mirroring is the problem of efficiently transferring a set from a \defined{primary} node to a \defined{replica} node, utilizing similarities between the primary's set and the outdated version on the replica. To do so, the primary node simply runs \cref{protocol:rbsr} as-is, and the replica node runs a slightly modified version: whenever it receives a range item set $\iis{x}{y}{S}{b}$, it removes from its local set $X_i$ all items in $\range{x}{y}{X_i} \setminus S$; and whenever it sends a range item set itself, it sends the empty set.
 
-For simplicity, we restrict our presentation to set reconciliation only for the remainder of this article, but all our results also apply to this mirroring technique.
+We restrict our presentation to reconciliation only, but all our results apply to this mirroring technique as well.
 
 \subsection{Protocol Properties}
-
-\Cref{protocol:rbsr} gives some leeway for nodes to decide whether and into how many subranges to split any range fingerprint they receive. The precise choices do not impact the correctness of the protocol. In particular, two nodes can reconcile a set even when using different strategies for deciding when and how to recurse. In a decentralized setting, different implementations do not need to coordinate and can make decisions based on their available resources.
+\Cref{protocol:rbsr} leaves open whether and into how many subranges to split large range fingerprints. In particular, two nodes can reconcile a set even when using different strategies for deciding when and how to recurse.
 
 \subsubsection{Termination and Correctness}
 
-Termination of \cref{protocol:rbsr} follow from an inductive argument. The number of items in the largest subrange of the current message is strictly decreasing with each round. Small ranges and ranges with matching fingerprints are handled within a constant number of communication rounds, so the protocol always terminates, even if the nodes prefer recursing over sending range item whenever allowed to do so.
+Termination of \cref{protocol:rbsr} follow from an inductive argument. Small ranges and ranges with matching fingerprints are handled within a constant number of communication rounds, and the largest subrange in round $i$ strictly smaller than that of round $i - 1$.
 
-Correctness can also be argued inductively. Under the assumption that fingerprints do not collide, ranges with equal fingerprints are reconciled correctly. Sending a range item set and receiving the response also leads to both nodes storing the union of all items within that range. The subranges created by the recursive case are reconciled correctly by induction hypothesis. And because the subranges partition the original range\footnote{In fact, for correctness it already suffices that the subranges \textit{cover} the original range. We limit our discussion to \textit{partitions} because they minimally cover the original range without containing any duplicate items.}, this completely reconciles the original range.
+Correctness follows inductively as well. If fingerprints do not collide, ranges with equal fingerprints are reconciled correctly. Sending a range item set and receiving the response leads to both nodes storing the union of all items within that range. The subranges in the recursive case are reconciled correctly by induction hypothesis. And because the subranges cover the original range, this reconciles the original range.
 
 \subsubsection{Complexity}
 
-The protocol gives nodes the freedom to respond to any range fingerprint with a range item set, even if the range fingerprint is arbitrarily large. For a meaningful complexity analysis we need to restrict the behavior of nodes. A realistic modus operandi is for a node to send a range item set only if the number of its items in the range is less than or equal to some threshold $t \in \Np$. Higher choices for $t$ reduce the number of roundtrips, but increase the probability that an item is being sent even though the other node already holds it.
+The protocol allows responding to range fingerprints with a range item set, even if that set is arbitrarily large. For a meaningful complexity analysis, we restrict nodes to send a range item set only if the number of its items in the range is less than or equal to some threshold $t \in \Np$. Large $t$ reduce the number of roundtrips, but increase the probability of sending an item the other node already has.
 
-A node is similarly given freedom over the number of subranges into which to split a range when recursing. We will assume that nodes always split into at most $b \in \N, b \geq 2$ subranges. As with $t$, higher numbers reduce the number of roundtrips, at the cost of potentially sending fingerprints that did not need sending.
+We similarly assume that nodes split ranges into at most $b \in \N, b \geq 2$ subranges when recursing. Large $b$ reduce the number of roundtrips but transmit more fingerprints.
 
-Transmitting all available items within a range is a very simple choice of recursion anchor, but becomes wasteful for large choices of $t$. A more sophisticated approach is to run a more efficient constant-round set reconciliation protocol such as~\cite{minsky2003set} once a range contains few enough items for both nodes. As that protocol would only be run on small sets, its time and space complexities would be in $\complexity{1}$, so the overall time and space complexities would be the same as for unmodified range-based reconciliation. Hence, range-based set reconciliation can be regarded as a mechanism for reducing the computational complexity of arbitrary reconciliation protocols. In our further analysis, we stick to \cref{protocol:rbsr} as presented however.
+In the following complexity analyses, $n_0$ and $n_1$ denote the number of items held by nodes \peer{0} and \peer{1} respectively. We let $n \defeq n_0 + n_1$, $n_{\min} \defeq \min(n_0, n_1)$ and $n_{\triangle} \defeq \abs{(X_0 \cup X_1) \setminus (X_0 \cap X_1}$.
 
-Because we want to analyze not only the worst-case complexity but also the complexity depending on the similarity between the two sets held by the participating nodes, we define some fine-grained instance size parameters: $n_0$ and $n_1$ denote the number of items held by \peer{0} and \peer{1} respectively. We let $n \defeq n_0 + n_1$, $n_{\min} \defeq \min(n_0, n_1)$ and $n_{\triangle} \defeq \abs{(X_0 \cup X_1) \setminus (X_0 \cap X_1}$ (the size of the symmetric difference of $X_0$ and $X_1$).
+Observe that the range fingerprints of a protocol run form a rooted, $b$-ary \defined{communication tree}, compare \cref{simple-set-reconciliation-example}. When a leaf of the tree is reached, an exchange of range item sets follows.
 
-A helpful observation for the coming analyses is that the range fingerprints of a protocol run form a rooted, $b$-ary tree, compare \cref{simple-set-reconciliation-example}. When a leaf of the tree is reached, an exchange of range item sets follows.
+Node $\mathcal{X}_i$ can perform at most $\ceil{\log_{b}(n_i)}$ recursion steps, so the overall height of the communication tree is bounded by $2 \cdot\ceil{\log_{b}(n_{\min})}$.
 
-Node $\mathcal{X}_i$ can perform at most $\ceil{\log_{b}(n_i)}$ recursion steps, so the overall height of the tree is bounded by $2 \cdot\ceil{\log_{b}(n_{\min})}$. The number of vertices of a $b$-ary tree of height $h$ is less than twice the number of leaves, so the overall number of vertices is in $\complexity{n}$.
+The parameter $t$ influences the height of the tree. For $t = 1$, the protocol recurses as far as possible. For $t = b$, the last level of recursion is cut off, for $t = b^2$ the last two levels, and so on. Overall, the height of the tree is reduced by $\floor{\log_{b}(t)}$.
 
-% Node $\mathcal{X}_i$ can perform at most $\ceil{\log_{b}(n_i)}$ recursion steps, so the overall height of the tree is bounded by $2 \cdot\ceil{\log_{b}(n_{\min})}$. The number of vertices of a $b$-ary tree of height $h$ is at most $\sum_{i=0}^{h} b^{i} = \frac{b^{h} - 1}{b - 1}$. For $h \leq 2 \cdot\ceil{\log_{b}(n_{\min})}$, we have $$\frac{b^{h} - 1}{b - 1} \leq 2 \cdot 2 \cdot n_{\min} \leq 2n \in \complexity{n}.$$
+The total number of communication rounds is bounded by the maximum number of times that nodes recurse, followed by two rounds of exchanging range items sets. This corresponds to two plus the height of the tree, so $2 + 2 \cdot\ceil{\log_{b}(n_{\min})} - \floor{\log_{b}(t)} \in \complexity{\log(n)}$.
 
-The parameter $t$ determines when recursion is cut off, and thus influences the height of the tree. For $t = 1$, the protocol recurses as far as possible. For $t = b$, the last level of recursion is cut off, for $t = b^2$ the last two levels, and so on. Overall, the height of the tree is reduced by $\floor{\log_{b}(t)}$.
-
-The total number of communication rounds required for reconciliation is bounded by the number of times that each node can split ranges without transmitting items, followed by two rounds of exchanging range items sets. This corresponds to two plus the height of the tree, so $2 + 2 \cdot\ceil{\log_{b}(n_{\min})} - \floor{\log_{b}(t)} \in \complexity{\log(n)}$.
-
-This number cannot be bounded by $n_{\triangle}$, as witnessed by problem instances where one node is missing exactly one item compared to the other node. In such an instance, $b - 1$ branches in each recursion step result in equal fingerprints, but the one branch that does continue reaches the recursion anchor only after the full number of rounds. See \cref{fig:worst-rounds} for an example.
+This number cannot be bounded by $n_{\triangle}$, as witnessed, e.g., by problem instances where one node is missing exactly one item compared to the other node (\cref{fig:worst-rounds}). In such an instance, $b - 1$ branches in each recursion step result in equal fingerprints, but the one branch that does continue reaches the recursion anchor only after the full number of rounds.
 
 \begin{figure*}
 $X_0 \defeq \{\examplea, \exampleb, \examplec, \exampled, \examplee, \exampleg, \exampleh \}$
@@ -491,7 +471,7 @@ $X_0 \defeq \{\examplea, \exampleb, \examplec, \exampled, \examplee, \exampleg, 
 $X_1 \defeq \{\examplea, \exampleb, \examplec, \exampled, \examplee, \examplef, \exampleg, \exampleh \}$
 
 \begin{scaletikzpicturetowidth}{\textwidth}
-\begin{tikzpicture}[scale=\tikzscale, font=\tiny]
+\begin{tikzpicture}[scale=\tikzscale, yscale=0.8, font=\small]
 	\pgfdeclarelayer{background}
 	\pgfdeclarelayer{foreground}
 	\pgfsetlayers{background,main,foreground}
@@ -540,9 +520,9 @@ $X_1 \defeq \{\examplea, \exampleb, \examplec, \exampled, \examplee, \examplef, 
 
 Every item in the symmetric difference can be responsible for only one such a path from the root to a leaf, a fact we can use to bound the number of transmitted bits. Range fingerprints and range item sets can be encoded using $\complexity{1}$ bits (because we assume $U$ to be finite and limit the size of range item sets to $t$). As the height of the tree is in $\complexity{\log(n)}$, we get an overall bound  of $\complexity{n_{\triangle} \cdot \log(n)}$ bits.
 
-These paths overlap however, and every vertex of the tree only contributes $\complexity{1}$ bits to the reconciliation session, no matter how many items made it necessary to transmit that fingerprint. As we have at most $\complexity{n}$ nodes in the tree, the overall number of bits is at most $\complexity{\min(n_{\triangle} \cdot \log(n), n)}$. The more overlap between the paths, the fewer bits per item in the symmetric difference have to be transmitted. The case of transmitting $\complexity{n}$ bits occurs if one node is lacking every second item of the other node, see \cref{fig:worst-bytes}.
+These paths to $n_{\triangle}$ many leaves overlap however, and every vertex of the communication tree only contributes $\complexity{1}$ bits to the reconciliation session. As we have at most $\complexity{n}$ nodes in the tree, the overall number of bits is at most $\complexity{\min(n_{\triangle} \cdot \log(n), n)}$. The case of transmitting $\complexity{n}$ bits occurs if one node is lacking every second item of the other node, see \cref{fig:worst-bytes}.
 
-In terms of bits per item, this is very efficient however: in this scenario, $n_{\triangle}$ is within a constant factor of $n$, so we transmit $\complexity{1}$ bits per item that needs synchronization. The least efficient scenario from this point of view is that of $n_{\triangle} = 1$, where we send $\complexity{\log(n)}$ bits per item.
+In terms of bits per item, this is efficient however: since $n_{\triangle}$ is within a constant factor of $n$, we transmit $\complexity{1}$ bits per item that needs synchronization. The least efficient scenario from this point of view is that of $n_{\triangle} = 1$, where we send $\complexity{\log(n)}$ bits per item.
 
 \begin{figure*}
 $X_0 \defeq \{\examplea, \examplec, \examplee, \exampleg \}$
@@ -550,7 +530,7 @@ $X_0 \defeq \{\examplea, \examplec, \examplee, \exampleg \}$
 $X_1 \defeq \{\examplea, \exampleb, \examplec, \exampled, \examplee, \examplef, \exampleg, \exampleh\}$
 
 \begin{scaletikzpicturetowidth}{\textwidth}
-\begin{tikzpicture}[scale=\tikzscale, font=\tiny]
+\begin{tikzpicture}[scale=\tikzscale, yscale=0.8, font=\small]
 	\pgfdeclarelayer{background}
 	\pgfdeclarelayer{foreground}
 	\pgfsetlayers{background,main,foreground}
@@ -611,17 +591,20 @@ $X_1 \defeq \{\examplea, \exampleb, \examplec, \exampled, \examplee, \examplef, 
 \label{fig:worst-bytes}
 \end{figure*}
 
-Finally, we can observe that the largest possible size of a single message is proportional to the highest number of vertices in a single layer of the tree, i.e., it is proportional to $n_{\triangle}$. This affects the space complexity for the participating nodes. We will choose fingerprints such that nodes can process each message part within $\complexity{1}$ space. A simple way of implementing \cref{protocol:rbsr} is then for each node to store the full messages of size $\complexity{n_{\triangle}}$ in memory; the space requirement then also becomes $\complexity{n_{\triangle}}$.
+The size of each message is proportional to the number of vertices of the the corresponding depth in the communication tree, which is at most $n_{\triangle}$. This affects the space complexity for the participating nodes. If each node stores full messages in memory, the space complexity then is in $\complexity{n_{\triangle}}$ --- we will carefully choose fingerprints such that nodes can successively process each message part in $\complexity{1}$ space.
 
-Alternatively, nodes can split messages and transmit only a bounded number of message parts at a time, since it is not necessary to know the full message in order to process a single message part. Once a message fragment has been processed and the corresponding, newly computed response message parts have been sent, the other node can transmit the next message parts.
+Alternatively, nodes can split messages and transmit only a bounded number of message parts at a time. Once a message fragment has been processed and the corresponding, newly computed response message parts have been sent, the other node can transmit the next message parts.
 
-If both nodes follow this strategy and only allocate space for a constant number of message parts, the protocol can reach a deadlock. The number of message parts in a response can be greater than the number of message parts from which they were generated. When the number of message parts that would have to be transmitted exceeds the space capacity of both nodes added together, no node is able to receive or transmit more data.
+If both nodes follow this strategy but allocate space for only a constant number of message parts, the protocol can deadlock. The number of message parts in a response can increase across rounds. When it exceeds the total space capacity of both nodes, no node is able to receive or transmit more data.
 
-It is however possible for only one of the two nodes to use a constant amount of space, whereas the other node then has to buffer up to a full outgoing and incoming message simultaneously, for a total space complexity of $\complexity{n_{\triangle}}$. This setup leads to a higher number of communication rounds. The node with unbounded memory has to wait for confirmation before transmitting a new set of message parts, which adds a round trip for every set of message parts that needs to be transmitted; transmitting a message of size $\complexity{n_{\triangle}}$ takes $\complexity{n_{\triangle}}$ communication rounds. The overall number of communication rounds for the protocol then becomes $\complexity{n_{\triangle} \cdot \log(n)}$.
+If however one node can allocate $\complexity{n_{\triangle}}$ space to buffer both an incoming and an outgoing message, the other node can operate within constant space. This does lead to a higher number of communication rounds, as the buffering node needs to split messages into chunks of constant size and wait for confirmation before transmitting the next one. The number of communication rounds becomes proportional to the number of bits to transmit, so it is in $\complexity{\min(n_{\triangle} \cdot \log(n), n)}$.
 
-This analysis seems unfavorable, but note that only a constant number of bits needs to be transmitted in every single communication round. The lower number of communication rounds in the setting where both nodes can store arbitrarily large messages can only be achieved if arbitrarily large messages can be transmitted in a single communication round. In a more realistic networking model, a limited bandwidth of $k$ bits per communication round implies that transmitting $n$ bits requires $\frac{n}{k} \in \complexity{n}$ rounds.
+This analysis seems unfavorable, but note that only a constant number of bits needs to be transmitted in every single communication round. Our analysis of the setting with unbounded buffering capabilities assumes that messages of arbitrary size can be transmitted in a single communication round. In a more realistic networking model with limited bandwidth, \textit{every} protocols requires rounds proportional to the number of bits it sends. All set reconciliation protocols transmit at least $\Omega(n_{\triangle})$ bits~\cite{minsky2003set}, so range-based set reconciliation is within a logarithmic factor of the optimal number of communication rounds under this model, whether with bounded or unbounded memory.
 
-Under such a model, transmitting a single message of size $\complexity{n_{\triangle}}$ requires $\complexity{n_{\triangle}}$ rounds, hence, running range-based set reconciliation with unbounded memory takes $\complexity{n_{\triangle} \cdot \log(n)}$ rounds as well. So when taking finite bandwidth into account, one of the two nodes can operate with a constant amount of memory without affecting the asymptotic complexity of the protocol. Every possible set reconciliation protocol needs to transmit $\Omega(n_{\triangle})$ bits~\cite{minsky2003set}, so range-based set reconciliation is within a logarithmic factor of the optimal number of communication rounds under this model.
+
+% This analysis seems unfavorable, but note that only a constant number of bits needs to be transmitted in every single communication round. The lower number of communication rounds in the setting where both nodes can store arbitrarily large messages can only be achieved if arbitrarily large messages can be transmitted in a single communication round. In a more realistic networking model, a limited bandwidth of $k$ bits per communication round implies that transmitting $n$ bits requires $\frac{n}{k} \in \complexity{n}$ rounds.
+
+% Under such a model, transmitting a single message of size $\complexity{n_{\triangle}}$ requires $\complexity{n_{\triangle}}$ rounds, hence, running range-based set reconciliation with unbounded memory takes $\complexity{n_{\triangle} \cdot \log(n)}$ rounds as well. So when taking finite bandwidth into account, one of the two nodes can operate with a constant amount of memory without affecting the asymptotic complexity of the protocol. Every possible set reconciliation protocol needs to transmit $\Omega(n_{\triangle})$ bits~\cite{minsky2003set}, so range-based set reconciliation is within a logarithmic factor of the optimal number of communication rounds under this model.
 
 \section{Fingerprint Computation}\label{sec:computation}
 
