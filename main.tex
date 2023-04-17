@@ -601,24 +601,19 @@ If however one node can allocate $\complexity{n_{\triangle}}$ space to buffer bo
 
 This analysis seems unfavorable, but note that only a constant number of bits needs to be transmitted in every single communication round. Our analysis of the setting with unbounded buffering capabilities assumes that messages of arbitrary size can be transmitted in a single communication round. In a more realistic networking model with limited bandwidth, \textit{every} protocols requires rounds proportional to the number of bits it sends. All set reconciliation protocols transmit at least $\Omega(n_{\triangle})$ bits~\cite{minsky2003set}, so range-based set reconciliation is within a logarithmic factor of the optimal number of communication rounds under this model, whether with bounded or unbounded memory.
 
-
-% This analysis seems unfavorable, but note that only a constant number of bits needs to be transmitted in every single communication round. The lower number of communication rounds in the setting where both nodes can store arbitrarily large messages can only be achieved if arbitrarily large messages can be transmitted in a single communication round. In a more realistic networking model, a limited bandwidth of $k$ bits per communication round implies that transmitting $n$ bits requires $\frac{n}{k} \in \complexity{n}$ rounds.
-
-% Under such a model, transmitting a single message of size $\complexity{n_{\triangle}}$ requires $\complexity{n_{\triangle}}$ rounds, hence, running range-based set reconciliation with unbounded memory takes $\complexity{n_{\triangle} \cdot \log(n)}$ rounds as well. So when taking finite bandwidth into account, one of the two nodes can operate with a constant amount of memory without affecting the asymptotic complexity of the protocol. Every possible set reconciliation protocol needs to transmit $\Omega(n_{\triangle})$ bits~\cite{minsky2003set}, so range-based set reconciliation is within a logarithmic factor of the optimal number of communication rounds under this model.
-
 \section{Fingerprint Computation}\label{sec:computation}
 
-We now examine the time and space complexity of the computations each node must perform during a reconciliation session. We consider a model where each node, in addition to working memory for performing computations, maintains an auxiliary data structure across computations. The node updates its auxiliary data structure whenever its set changes, and it can read from this data structure during its fingerprint computations.
+We now examine the time and space complexity of the computations each node performs during a reconciliation session. We consider a model where each node, in addition to working memory for performing computations, maintains an auxiliary data structure across computations. The node updates its auxiliary data structure whenever its set changes, and it can read from this data structure during its fingerprint computations.
 
-This model is motivated by the fact that each node already has to update an external data structure --- its set  --- between message computations and in secondary storage rather than main memory. Overall, we are interested in the time it takes to update the auxiliary datastructure to reflect changes to the set, the space consumed by the auxiliary data structure, the time it takes to compute each message during a reconciliation session, and the space this requires.
+This model is motivated by the fact that each node already has to update an external data structure --- its set  --- between message computations. Overall, we are interested in the time and memory it takes to update the auxiliary datastructure to reflect changes to the set, the space consumed by the auxiliary data structure, the time it takes to compute each message during a reconciliation session, and the space this requires.
 
 Assuming the set is stored as a balanced search tree, it consumes a linear amount of space, and adding or removing individual items requires $\complexity{\log(n)}$ time. This gives us a free complexity budget to work with; if our auxiliary data structure requires the same amount of time and space, it does not impact the asymptotic performance of our approach. We will, in fact, extend the tree representation of the set by storing additional data in each vertex.
 
-\subsection{Labeled Trees}
+\subsection{Monoid Trees}
 
-When computing messages, a node must be able to efficiently compute the fingerprint of all items it holds within arbitrary ranges. We now consider a general family of functions that map ranges within a set to some codomain, and that can be efficiently computed with an auxiliary tree structure. These functions reduce a finite set to a single value according to a monoid.
+When computing messages, a node must efficiently compute the fingerprint of all items it holds within arbitrary ranges. We now consider a general family of functions that map ranges within a set to some codomain, and that can be efficiently computed with an auxiliary tree structure. These functions reduce a finite set to a single value according to a monoid.
 
-\begin{definition}[Monoid]
+\begin{definition}
 Let $M$ be a set, $\groupaddsym: M \times M \rightarrow M$, and $\neutraladd \in M$.
 
 We call $(M, \groupaddsym, \neutraladd)$ a \defined{monoid} if it satisfies two properties:
@@ -645,9 +640,9 @@ In other words, if $S = \set{s_1, s_2, \ldots, s_{\abs{S}}}$ with $s_1 \prec s_2
 
 Let, for example, $U$ be an arbitrary set, $\mathcal{N}$ be the monoid of natural numbers under addition, and let $\lambda x.1$ map any $x$ to the number $1$, then $\lift{\lambda x.1}{\mathcal{N}}(S) = \abs{S}$ for every finite $S \subseteq U$.
 
-We can efficiently compute lifted functions by maintaining a tree structure. We define trees inductively to simplify the presentation of algorithms:
+We can efficiently compute lifted functions by maintaining a labeled tree.
 
-\begin{definition}[Binary Tree]
+\begin{definition}
 A \defined{binary tree} $t$ over a universe $U$ is either the empty tree $\nil$, or a triplet of a left subtree $\tl{t}$, a value $\tv{t} \in U$, and a right subtree $\tr{t}$.
 
 We say $t$ is a \defined{vertex} if $t \neq \nil$; we denote the set of all vertices in a tree $t$ by $\V(t)$. We say a vertex $t$ is a \defined{leaf} if $\tl{t} = \nil = \tr{t}$, otherwise, $t$ is \defined{internal}.
@@ -657,20 +652,20 @@ Let $\preceq$ be a total order. We say $t$ is a \defined{search tree} (with resp
 
 Toward efficient computation of functions of the form $\lift{\f}{\mathcal{M}}$, we label a binary search tree $t$:
 
-\begin{definition}[Monoid Tree]
+\begin{definition}
 Let $U$ be a set, $S \subset U$ a finite set, $\preceq$ a linear order on $U$, $\mathcal{M} \defeq (M, \groupaddsym, \neutraladd)$ a monoid, $\fun{\f}{U}{M}$, and let $t$ be a binary search tree on $S$.
 
-We define a \defined{labeling function} $\fun{\liftlabel{\f}{\mathcal{M}}}{\V(t)}{M}$:\\
+We define a \defined{monoid labeling function} $\fun{\liftlabel{\f}{\mathcal{M}}}{\V(t)}{M}$:\\
 $\liftlabel{\f}{\mathcal{M}}(t) \defeq \neutraladd$ if $t = \nil$,\\
 $\liftlabel{\f}{\mathcal{M}}(t) \defeq \groupadd{\liftlabel{\f}{\mathcal{M}}(\tl{t})}{\groupadd{\f(\tv{t})}{\liftlabel{\f}{\mathcal{M}}(\tr{t})}}$ otherwise.
-We call a tree labeled by such a labeling function a \defined{monoid tree}.
+We call a tree labeled by $\fun{\liftlabel{\f}{\mathcal{M}}}{\V(t)}{M}$ a \defined{monoid tree}.
 \end{definition}
 
-Observe that $\liftlabel{\f}{\mathcal{M}}(t) = \lift{\f}{\mathcal{M}}(\V(t))$ for every binary search tree $t$. The exact shape of the tree dictates the grouping of how to apply $\groupaddsym$ to several values; different groupings yields the same result, as $\groupaddsym$ is associative. Because we label a search tree, $\groupaddsym$ is always applied to the items in ascending order. If we were labeling arbitrary, not necessarily sorted binary trees, $\groupaddsym$ would have to be commutative for the equality of labels and lifted functions to hold.
+Observe that $\liftlabel{\f}{\mathcal{M}}(t) = \lift{\f}{\mathcal{M}}(\V(t))$ for every binary search tree $t$. The exact shape of the tree dictates the grouping of how to apply $\groupaddsym$ to several values; different groupings yield the same result, as $\groupaddsym$ is associative. Because we label a search tree, $\groupaddsym$ is always applied to the items in ascending order, regardless of the tree shape.
 
 Returning to our previous example, labeling a tree with $\liftlabel{\lambda x.1}{\mathcal{N}}$ annotates each subtree with its size, i.e., this yields the order statistic trees~\cite{cormen2022introduction}. The labels can be kept updated in a self-balancing search tree implementation without changing the asymptotic complexity of insertion and deletion for both $\liftlabel{\lambda x.1}{\mathcal{N}}$ in particular and for arbitrary $\liftlabel{\f}{\mathcal{M}}$ functions in general~\cite{cormen2022introduction}.
 
-Every function of the form $\liftlabel{\f}{\mathcal{M}}$ for some function $\f$ and some monoid $\mathcal{M}$ can be used for maintaining labels in the tree, but do there exist other such functions as well? To answer this, we give a homomomorphism-flavored characterization of candidate functions: given the images of two sets, one containing only items strictly less than those in the other, the image of the union of these sets should be the same as combining the original images in some monoid. This ensures that vertex labels can be updated by considering only the labels of their children and the image of their value.
+Every monoid labeling function can be used for efficiently maintaining labels in the tree, but are these the only such functions? To answer this, we give a homomorphism-flavored characterization of candidate functions: given the images of two sets, one containing only items strictly less than those in the other, the image of the union of these sets should be the same as combining the original images in some monoid. This ensures that vertex labels can be updated by considering only the labels of their children and the image of their value.
 
 \begin{definition}[Tree-Friendly Function]
 	Let $U$ be a set, $\preceq$ a linear order on $U$, $\mathcal{M} \defeq (M, \groupaddsym, \neutraladd)$ a monoid, and $\partialfun{\f}{\powerset{U}}{M}$ a partial function mapping all finite subsets of $U$ into $M$.
@@ -684,36 +679,37 @@ This definition captures exactly the functions of form $\lift{\f}{\mathcal{M}}$,
 Let $U$ be a set, $\preceq$ a linear order on $U$, $\mathcal{M} \defeq (M, \groupaddsym, \neutraladd)$ a monoid, and $\fun{\f}{U}{M}$.
 
 Then $\lift{\f}{\mathcal{M}}$ is a \somewhatmorphism{}.
+\end{proposition}
 
 \begin{proof}
 Let $S_0, S_1 \in \powerset{U}$ be finite sets such that $\max(S_0) \prec \min(S_1)$. Then:
-
+\vspace{-0.1cm}
 \begin{align*}
 \lift{\f}{\mathcal{M}}(S_0 \cup S_1) &= \biggroupadd_{\substack{s_i \in S_0 \cup S_1,\\ \text{ascending}}} \f(s_i)\\
 &= \biggroupadd_{\substack{s_i \in S_0,\\ \text{ascending}}} \f(s_i) \groupaddsym \biggroupadd_{\substack{s_i \in S_1,\\ \text{ascending}}} \f(s_i)\\
 &= \lift{\f}{\mathcal{M}}(S_0) \groupaddsym \lift{\f}{\mathcal{M}}(S_1)\\
-\end{align*}
+\end{align*}%
+% \vspace{-0.5cm}
 \end{proof}
-\end{proposition}
 
 \begin{proposition}
 Let $U$ be a set, $\preceq$ a linear order on $U$, $\mathcal{M} \defeq (M, \groupaddsym, \neutraladd)$ a monoid, and $\partialfun{\g}{\powerset{U}}{M}$ a \somewhatmorphism{}.
 
 Then there exists $\fun{\f}{U}{M}$ such that $\g = \lift{\f}{\mathcal{M}}$.
+\end{proposition}
 
 \begin{proof}
 Define $\fun{\f}{U}{M}$ as $\f(u) \defeq \g(\set{u})$. We show by induction on the size of $S \subseteq U$ that $\g(S) = \lift{f}{\mathcal{M}}(S)$.
 
-\vspace{10pt}
+% \vspace{10pt}
 
-\textbf{IB:} If $S = \emptyset$, then $\g(S) = \neutraladd = \lift{\f}{\mathcal{M}}(S)$. Suppose that $\g(\emptyset) \neq \neutraladd$, this would contradict the fact that for all $x \in U$ we have $\g(\set{x}) = \g(\set{x}) \groupaddsym \g(\emptyset) = \g(\emptyset) \groupaddsym \g(\set{x})$, which holds because $\set{x} = \set{x} \cup \emptyset = \emptyset \cup \set{x}$ and $\g$ is a \somewhatmorphism{}.
-
-If $S = \set{x}$, then $\g(S) = \f(x) = \lift{\f}{\mathcal{M}}(S)$.
+\textbf{IB:} If $S = \emptyset$, then $\g(S) = \neutraladd = \lift{\f}{\mathcal{M}}(S)$. Suppose that $\g(\emptyset) \neq \neutraladd$, this would contradict the fact that for all $x \in U$ we have $\g(\set{x}) = \g(\set{x}) \groupaddsym \g(\emptyset) = \g(\emptyset) \groupaddsym \g(\set{x})$, which holds because $\set{x} = \set{x} \cup \emptyset = \emptyset \cup \set{x}$ and $\g$ is a \somewhatmorphism{}. If $S = \set{x}$, then $\g(S) = \f(x) = \lift{\f}{\mathcal{M}}(S)$.
 
 \textbf{IH:} For all sets $T$ with $\abs{T} = n$ it holds that $\g(T) = \lift{\f}{\mathcal{M}}(T)$.
 
 \textbf{IS:} Let $S \subseteq U$ with $\abs{S} = n + 1$, then:
 
+\vspace{-0.5cm}
 \begin{align*}
 \g(S) &= \g(\set{\min(S)}) \groupaddsym \g(S \setminus \set{\min(S)})\\
 &\overset{\text{IH}}= \g(\set{\min(S)}) \groupaddsym \lift{\f}{\mathcal{M}}(S \setminus \set{\min(S)})\\
@@ -721,18 +717,17 @@ If $S = \set{x}$, then $\g(S) = \f(x) = \lift{\f}{\mathcal{M}}(S)$.
 &= \lift{\f}{\mathcal{M}}(S)\\
 \end{align*}
 
-\vspace{10pt}
+\vspace{-0.5cm}
 As $\g$ is only defined over finite inputs, we thus have $\g = \lift{\f}{\mathcal{M}}$.
 \end{proof}
-\end{proposition}
 
 \subsection{Range Computations}
 
-Given a monoid tree $t$, we can compute $\lift{\f}{\mathcal{M}}\bigl(\range{x}{y}{\V(t)}\bigr)$ efficiently for any $x, y \in U$. Without loss of generality, we can assume that $x \prec y$, as we can otherwise compute $\lift{\f}{\mathcal{M}}\bigl(\range{\min(\V(t))}{y}{\V(t)}\bigr) \groupaddsym \lift{\f}{\mathcal{M}}\bigl(\range{x}{\max(\V(t))}{\V(t)}\bigr)$.
+Given a monoid tree $t$, we can compute $\lift{\f}{\mathcal{M}}\bigl(\range{x}{y}{\V(t)}\bigr)$ efficiently for \textit{any} $x, y \in U$. Without loss of generality, we can assume that $x \prec y$, as we can otherwise compute $\lift{\f}{\mathcal{M}}\bigl(\range{\min(\V(t))}{y}{\V(t)}\bigr) \groupaddsym \lift{\f}{\mathcal{M}}\bigl(\range{x}{\max(\V(t))}{\V(t)}\bigr)$.
 
-Intuitively speaking, we trace paths from (the root of) $t$ to $x$ and $y$, and then we need to combine all values in the ``area between those paths''. The labels of the children of the vertices along these paths which lie within that area summarize this information, so it suffices to combine information that is available locally around the paths. If the tree is balanced, we thus only need to combine a logarithmic number of values.
+Intuitively speaking, we trace paths from (the root of) $t$ to $x$ and $y$, and then we need to combine all values in the ``area between those paths''. The labels of the children of the vertices along these paths which lie within that area summarize this information, so it suffices to combine information from the out-neighborhood of the paths. If the tree is balanced, we thus only need to combine a logarithmic number of values.
 
-\Cref{alg:aggregate_once} gives the precise definition of the algorithm. First, we search for the first vertex reachable from the root that lies within the range (the procedure \textproc{find\_initial}). If no such vertex exists, the set contains no items within the range. If such an initial vertex exists however, it is necessarily unique: assume toward a contradiction that there are two distinct such vertices $a \prec b$. Because $t$ is a search tree, the least common ancestor of $a$ and $b$ is also in the range, and it is closer to the root than both $a$ and $b$, a contradiction. Consequently, all items within the range are descendents of the initial vertex, which we name $init$.
+\Cref{alg:aggregate_once} gives the precise definition of the algorithm. First, we search for the first vertex reachable from the root that lies within the range (the procedure \textproc{find\_initial}). If no such vertex exists, the set contains no items within the range. If such an initial vertex exists however, it is necessarily unique. Assume toward a contradiction that there are two distinct such vertices $a \prec b$. Because $t$ is a search tree, the least common ancestor of $a$ and $b$ is also in the range, and it is closer to the root than both $a$ and $b$, a contradiction. Consequently, all items within the range are descendents of the initial vertex, which we name $init$.
 
 Because all items within the range are descendents of $init$ and $x \preceq init \prec y$, we have that \begin{align*}
 	\range{x}{y}{\V(t)} &= \set{z \in \V(\tl{init}) \mid z \succeq x} \disjointunion\\
@@ -823,7 +818,8 @@ Procedure \textproc{aggregate\_left} demonstrates how to compute $\lift{\f}{\mat
 \end{algorithm}
 
 \begin{figure*}
-\begin{adjustbox}{width=\textwidth}
+\begin{center}
+\begin{adjustbox}{width=\textwidth - 3.5cm}
 \begin{tikzpicture}
 \tikzstyle{vertex} = [opacity=1.0]
 \tikzstyle{edge} = [draw,thick,opacity=1.0]
@@ -903,15 +899,17 @@ Procedure \textproc{aggregate\_left} demonstrates how to compute $\lift{\f}{\mat
 	\end{pgfonlayer}
 \end{tikzpicture}
 \end{adjustbox}
+\end{center}
+\vspace{-0.5cm}
 
 \caption{Visualization of an exemplary tree traversal as performed by \cref{alg:aggregate_once} to compute $\lift{\f}{\mathcal{M}}\bigl(\range{2}{13}{\V(t)}\bigr)$. Notice that $v_7$ need not be visited, as its contribution to the accumulated value is already part of $\liftlabel{\f}{\mathcal{M}}(v_8)$. Notice further that the traversal visits $v_{14}$ but ignores it, as $14$ lies outside the range.}
 
 \label{fig:aggregate_once}
 \end{figure*}
 
-Overall, \cref{alg:aggregate_once} performs searches for two items in a search tree, along with some constant-time computations in each search step. If $t$ is balanced, the time complexity is thus in $\complexity{\log(\abs{\V(t)})}$. As the algorithm requires no dynamic memory allocation and is not recursive, its space complexity is in $\complexity{1}$.
+Overall, \cref{alg:aggregate_once} searches for two items in a search tree, along with some constant-time computations in each search step. If $t$ is balanced, the time complexity is thus in $\complexity{\log(\abs{\V(t)})}$. As the algorithm requires no dynamic memory allocation and is not recursive, its space complexity is in $\complexity{1}$.
 
-Because associativity guarantees equal results regardless of the precise shape of the tree, implementations need not restrict themselves to binary trees. The algorithm can be extended to the more efficient B-trees~\cite{bayer2002organization}, for example.
+Because associativity guarantees equal results regardless of the precise shape of the tree, implementations need not restrict themselves to binary trees. The algorithm can be extended to the practically more efficient B-trees~\cite{bayer2002organization}, for example.
 
 \subsection{Monoidal Fingerprints}
 
@@ -924,7 +922,7 @@ A \defined{hash function} is a function $\fun{\h}{U}{D}$ with a finite codomain,
 
 To efficiently compute fingerprints for arbitrary ranges, we use \somewhatmorphisms{} $\lift{\f}{\mathcal{M}}$ that serve as hash functions from $\powerset{U}$. As $\lift{\f}{\mathcal{M}}(\set{u})$ is equal to $\f(u)$, $\f$ must itself already be a hash function. Typical hash functions map values to bit strings of a certain length, i.e., the codomain is $\set{0, 1}^k$ for some $k \in \N$. We will thus consider monoids whose elements can be represented by such bit strings.
 
-A natural choice of the monoid universe is then $\range{0}{2^k}{\N}$, some simple monoidical operations on this universe include bitwise xor, addition modulo $2^k$, and multiplication modulo $2^k$. Of these three options, multiplication is the least suitable, because multiplying any number by $0$ yields $0$. Consequently, for every set containing an item $u$ with $\f(u) = 0$, the fingerprint of the set is $0$, which clearly violates the criterion that all possible values for fingerprints occur with equal probability.
+A natural choice of the monoid universe is then $\range{0}{2^k}{\N}$, some simple monoidal operations on this universe include bitwise xor, addition modulo $2^k$, and multiplication modulo $2^k$. Of these three options, multiplication is the least suitable, because multiplying any number by $0$ yields $0$. Consequently, for every set containing an item $u$ with $\f(u) = 0$, the fingerprint of the set is $0$, which clearly violates the criterion that all possible values for fingerprints occur with equal probability.
 
 The monoid operation preserves a good distribution of fingerprints if any given fingerprint can be obtained from any particular fingerprint by combining it with some third one, i.e., if, for every $x \in M$, $\lambda y.x \groupaddsym y$ is a bijection. Addition and xor satisfy this criterium, as does in fact every finite commutative group $\mathcal{G} = (G, \groupaddsym, -)$: for every $x, z \in M$ there exists $y \in M$ such that $x \groupaddsym y = z$, by choosing $y \defeq z \groupaddsym -x$, because then $x \groupaddsym y = x \groupaddsym z \groupaddsym (-x) = x \groupaddsym (-x) \groupaddsym z = z$. Hence, $\lambda y.x \groupaddsym y$ is surjective, and, because $G$ is finite, the function is also injective.
 
@@ -934,13 +932,15 @@ Overall, the computations for processing a single range fingerprint for a local 
 
 \subsection{Ascending Intervals}
 
-When computing fingerprints for several ranges, we can reduce the overall time complexity if the ranges are sorted by their lower boundaries in ascending order. We can accumulate labels while traversing from the lower boundary of each range to its upper boundary; then we traverse to the lower boundary of the next range, ready to process it.
+When computing fingerprints for several ranges, we can reduce the overall time complexity if the ranges are sorted by their lower boundaries in ascending order. We can accumulate labels while traversing from the lower boundary of each range to its upper boundary; then we traverse to the lower boundary of the next range, ready to process it. In this traversal, any edge is traversed at most twice, giving an upper bound for processing a single message of $\complexity{n}$.
 
-The maximum distance between two vertices in a balanced tree on $n$ vertices is in $\complexity{\log(n)}$. Processing any individual range this way thus requires $\complexity{\log(n)}$ time, just like our previous approach. Notice however that, when traversing the tree for successive sorted ranges, every edge is traversed at most twice. The time complexity for traversing multiple ranges in sequence is thus at most in $\complexity{n}$. Using this approach, we can hence bound the time complexity for a single communication round by $\complexity{\min(n_i, n_{\triangle} \cdot \log(n_i))}$. This can result in a logarithmic speed-up compared to prior discussion of range-based set reconciliation (\cite{chen1999prototype}\cite{shang2017survey}).
+Processing any individual range this way still requires $\complexity{\log(n)}$ time, since the maximum distance between two vertices in a balanced tree on $n$ vertices is in $\complexity{\log(n)}$. Overall, the time complexity for a single communication round is hence in $\complexity{\min(n, n_{\triangle} \cdot \log(n))}$. This can result in a logarithmic speed-up compared to prior discussion of range-based set reconciliation (\cite{chen1999prototype}\cite{shang2017survey}).
+
+% The maximum distance between two vertices in a balanced tree on $n$ vertices is in $\complexity{\log(n)}$. Processing any individual range this way thus requires $\complexity{\log(n)}$ time, just like our previous approach. Notice however that, when traversing the tree for successive sorted ranges, every edge is traversed at most twice. The time complexity for traversing multiple ranges in sequence is thus at most in $\complexity{n}$. Using this approach, we can hence bound the time complexity for a single communication round by $\complexity{\min(n_i, n_{\triangle} \cdot \log(n_i))}$. This can result in a logarithmic speed-up compared to prior discussion of range-based set reconciliation (\cite{chen1999prototype}\cite{shang2017survey}).
 
 \textproc{aggregate\_until} (\cref{alg:aggregate_ascending}) implements this traversal as a procedure that takes the boundaries of a single range and the vertex that stores the lower boundary as arguments, and returns both the aggregated monoidal value of the range, and the vertex that stores the least value that is greater than the upper boundary. This vertex can be used as the starting point for the next invocation of the procedure to find the lower boundary of the next range. If no such vertex exists, the procedure returns $\nil$ in its place, and the aggregated value for all following ranges is known to be $\neutraladd$.
 
-Observe that the path from some lower boundary $x$ to some upper boundary $y$ consists of some (possibly zero) steps from $x$ toward the root, and then some (possibly zero) steps toward $y$. In order to compute this path in constant space and time per step, we augment the data structure by adding to each vertex $v$ a reference $\tp{v}$ to its parent ($nil$ for the root), and the largest value stored in its subtree, denoted as $\tm{v}$. The traversal begins by following parent references until reaching the root of a subtree $t$ that contains a value greater than or equal to $y$ (\textproc{aggregate\_up}), which we can efficiently detect by comparing $\tm{t}$ against $y$. The successive downward traversal (\textproc{aggregate\_down}) for finding the least value above the range terminates upon reaching a vertex $t$ with $\tv{t} \succeq y$ whose left subtree is fully contained within the range, i.e., with $\tm{\tl{t}} \prec y$.
+The path from some lower boundary $x$ to some upper boundary $y$ consists of some (possibly zero) upward steps from $x$, and then some (possibly zero) downward steps toward $y$. In order to compute this path in constant space and time per step, we add to each vertex $v$ a reference $\tp{v}$ to its parent ($nil$ for the root), and the maximal value stored in its subtree, denoted as $\tm{v}$. The traversal begins by following parent references until reaching the root of a subtree $t$ that contains a value greater than or equal to $y$ (\textproc{aggregate\_up}), which we can efficiently detect by comparing $\tm{t}$ against $y$. The successive traversal (\textproc{aggregate\_down}) for finding the least value above the range terminates upon reaching a vertex $t$ with $\tv{t} \succeq y$ whose left subtree is fully contained within the range, i.e., with $\tm{\tl{t}} \prec y$.
 
 \begin{algorithm}
 \caption{}\label{alg:aggregate_ascending}
@@ -1055,19 +1055,19 @@ We call $\f$ a \defined{multiset homomorphic hash function} if $\f$ is a hash fu
 
 Being a monoid homomorphism from $\mathcal{S}$ to $\mathcal{M}$ is a strictly stronger criterium than being a \somewhatmorphism{}. Hence, every multiset homomorphic hash function is suitable for our purposes. Additional multiset homomorphic hash functions are based on RSA~\cite{cathalo2009comparing} or on elliptic curves~\cite{maitin2017elliptic}.
 
-Because multiset union is commutative, so is necessarily any multiset homomorphic hash function. Tree-friendly functions do not require commutativity however. A typical associative but not commutative operation is matrix multiplication. \defined{Cayley hash functions}~\cite{zemor1991hash}\cite{petit2011rubik} are non-commutative hash functions based on multiplication of invertible matrices. While early schemes~\cite{tillich1994hashing} have been successfully attacked~\cite{grassl2011cryptanalysis}\cite{petit2010preimages}, there are several modifications for which no attacks are known \cite{petit2009graph}\cite{bromberg2017navigating}\cite{sosnovski2016cayley}. Cayley hash functions are randomly self-reducible~\cite{mullan2016text}.
+Because multiset union is commutative, so is necessarily any multiset homomorphic hash function. Tree-friendly functions do not require commutativity however. \defined{Cayley hash functions}~\cite{zemor1991hash}\cite{petit2011rubik} are non-commutative hash functions based on multiplication of invertible matrices. While early schemes~\cite{tillich1994hashing} have been successfully attacked~\cite{grassl2011cryptanalysis}\cite{petit2010preimages}, there are several modifications for which no attacks are known \cite{petit2009graph}\cite{bromberg2017navigating}\cite{sosnovski2016cayley}. Cayley hash functions are randomly self-reducible~\cite{mullan2016text}.
 
 % Study of a family of hash functions based on multiplication of invertible matrices was initiated in \cite{zemor1991hash}. The security of these hash functions is related to solving hard graph problems on the Cayley graph of the matrix multiplication group. \cite{petit2011rubik} gives an overview about the general principles and the security aspects of Cayley hash functions.
 
 % While~\cite{tillich1994hashing}, an improvement over the originally proposed scheme, has been successfully attacked in~\cite{grassl2011cryptanalysis} and~\cite{petit2010preimages}, there are several modifications such as~\cite{petit2009graph}\cite{bromberg2017navigating}\cite{sosnovski2016cayley} for which no attacks are known; and~\cite{mullan2016text} shows random self-reducibility for Cayley hash functions.
 
-Aside from Cayley hashes, we are not aware of any non-commutative monoids used for hashing. Notice that hash functions based on non-commutative groups (such as Cayley hashes) still have more structure than we need, as we don't require existence of inverse elements. Further suitable hash functions could thus be located in a more general design space than studied in any literature we know of.
+Aside from Cayley hashes, we are not aware of any non-commutative monoids used for hashing. Note that even cayley hashes have more more structures than we need, as we don't require existence of inverse elements.
 
 Regardless of the choice of monoid, the reconciliation protocol can exchange (conventional) hashes of fingerprints rather than exchanging fingerprints directly. This allows us to use large fingerprints to achieve security (e.g., using bitwise additions on long bitstrings as the monoid), while still transmitting only a small number of bits over the wire. The large fingerprints do however increase the space consumption of the monoid tree. Whether a computationally expensive monoid operation on small bitstrings outperforms a cheaper operation on larger bitstrings is hence not obvious and requires benchmarking to make an informed choice.
 
 \section{Conclusion}\label{conclusion}
 
-We consider range-based set reconciliation to be an important complement to the bulk of the related literature which focuses on achieving a constant number of communication rounds. While the logarithmic number of communication rounds is a significant drawback, no constant-roundtrip approach achieves computational complexity proportional to only the size of the symmetric difference; and range-based reconciliation is conceptually much simpler. Among other schemes that take a logarithmic number of rounds, ours is the only one to guarantee logarithmic roundtrips and computational complexity in the worst case.
+We consider range-based set reconciliation to be an important complement to the bulk of the related literature which focuses on achieving a constant number of communication rounds. While the logarithmic number of communication rounds is a significant drawback, no constant-roundtrip approach achieves computational complexity proportional to only the size of the symmetric difference; and range-based reconciliation is conceptually much simpler. Among other schemes that take a logarithmic number of rounds, ours is the only one to guarantee both logarithmic roundtrips and computational complexity in the worst case.
 
 The asymmetric scenario where one node operates using only a constant amount of working memory is unique among all proposed schemes. The option of using a more sophisticated reconciliation procedure once ranges have become small enough can make it worth a consideration in almost any reconciliation scenario.
 
@@ -1087,9 +1087,9 @@ So above all, we hope to bring more attention to the range-based approach, as th
 
 \section{Acknowledgments}
 
-Albus Dumbledore (anonymized for peer review)
+Anonymized Person
 % Jan Winkelmann
- contributed the idea of hashing monoid values before transmission in order to use large monoid universes for secure fingerprints without affecting the number of transmitted bits.
+ contributed the idea of compressing fingerprints with a hash function before transmission.
 
 \bibliographystyle{alphaurl}
 \bibliography{main}
