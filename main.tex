@@ -25,7 +25,7 @@
 
 \usepackage{hyperref}
 \usepackage{amsmath}
-\usepackage{cleveref}
+\usepackage[capitalise]{cleveref}
 \usepackage{adjustbox}
 
 \usepackage{macros}
@@ -59,7 +59,7 @@
 \usetikzlibrary{shapes}
 \usetikzlibrary{calc}
 \usetikzlibrary{math}
-\usetikzlibrary{decorations.pathreplacing,calligraphy}
+\usetikzlibrary{decorations.pathreplacing,calligraphy} 
 \usepackage{pgffor}
 
 \usepackage{algorithm}
@@ -202,9 +202,13 @@ minimum height={height("\exampleh") + height("h"}
 
 \title{Range-Based Set Reconciliation}
 
-\author{Aljoscha Meyer}
+% \author{Aljoscha Meyer}
 % \affiliation{TU Berlin, Germany}
 % \email{research@aljoscha-meyer.de}
+
+\author{\IEEEauthorblockN{Aljoscha Meyer}
+\IEEEauthorblockA{Technical University Berlin\\
+Email: research@aljoscha-meyer.de}}
 
 % \begin{CCSXML}
 % 	<ccs2012>
@@ -256,15 +260,15 @@ Range-based set reconciliation is a simple approach to efficiently computing the
 
 Set reconciliation is the problem of computing the union of two sets that are located at two different nodes in a network; both nodes should hold the union of the two sets afterward. Exchanging the full sets redundantly transmits their intersection. Hence, we are interested in (probabilistic) solutions whose communication complexity is bounded by the size of their symmetric difference.
 
-A classic use case for set reconciliation are epicdemic~\cite{demers1987epidemic} peer-to-peer systems for information sharing. Nodes continuously connect to randomly chosen other nodes, and reconcile their data. Over time, the ratio of fresh to old data decreases, so the size of the sets usually eclipses the size of the symmetric difference.
+A classic use case for set reconciliation are epidemic~\cite{demers1987epidemic} peer-to-peer systems for information sharing. Nodes continuously connect to randomly chosen other nodes, and reconcile their data. Over time, the ratio of fresh to old data decreases, so the size of the sets usually eclipses the size of the symmetric difference.
 
 Another use case is that of replication and mirroring in distributed database systems. Key-value stores, for example, are simply sets of pairs of keys and values. Mirroring the state of one store to another is related to computing the union of the two mappings --- the range-based set reconciliation approach can be adapted to perform mirroring instead.
 
 There exist sophisticated protocols~\cite{eppstein2011s} that solve set reconciliation in a constant number of communication rounds and with communication complexity linear in the size of the symmetric difference. These impressive bounds are provably optimal~\cite{minsky2003set}, but computing the necessary messages requires time and space linear in the size of the local set, even if the symmetric difference is small.
 
-These computational costs can be prohibitive for large sets; also such approaches are conceptually complex and do not discuss how maliciously crafted sets can lead to faulty reconciliation. For reliable practical deployment, we hence look for a conceptualy simple solution with low computational complexity and protection against malicious inputs. We believe that optimizing these metrics can be more important than over-optimizing communication complexity.
+These computational costs can be prohibitive for large sets; also such approaches are conceptually complex and do not discuss how maliciously crafted sets can lead to faulty reconciliation. For reliable practical deployment, we hence look for a conceptually simple solution with low computational complexity and protection against malicious inputs. We believe that optimizing these metrics can be more important than over-optimizing communication complexity.
 
-\defined{Range-based set reconciliation} has space complexity linear in the size of the symmetric difference of the sets, and time complexity linear in the size of the symmetric difference or the logarithm of the size of the local set, whichever is greater. This comes at the cost of a logarithmic number of communication rounds, as the procedure follows a straightforward divide-and-conquer approach: the sets are sorted according to some total order, and nodes initiate reconciliation by sending the fingerprint of all their local items within a certain range. Upon receiving a pair of range delimiters and a fingerprint, a node computes the fingerprint of all of its own local items within that range. If the fingerprints match, the range has been successfully reconciled. Otherwise the node splits the range into smaller subranges, and initiates reconciliation for these new ranges. Whenever a node receives the fingerprint of the empty set, it transmits all its local items within that range to its peer.
+\defined{Range-based set reconciliation} has space complexity linear in the size of the symmetric difference of the sets, and time complexity linear in the size of the symmetric difference or the logarithm of the size of the local set, whichever is greater. This comes at the cost of a logarithmic number of communication rounds, as the procedure follows a straightforward divide-and-conquer approach: the sets are sorted according to some total order, and nodes initiate reconciliation by sending a fingerprint of all their local items within a certain range. Upon receiving a pair of range delimiters and a fingerprint, a node computes the fingerprint of all of its own local items within that range. If the fingerprints match, the range has been successfully reconciled. Otherwise the node splits the range into smaller subranges, and initiates reconciliation for these new ranges. Whenever a node receives the fingerprint of the empty set, it transmits all its local items within that range to its peer.
 
 If the fingerprint of a set can be computed by associatively combining the fingerprints of its members, e.g., the exclusive or of hashes of all members, we can compute it efficiently. We store the set as a balanced search tree, every vertex labeled by the fingerprint of its subtree. Maintaining the labels takes no more time asymptotically than maintaining the tree structure itself, and we can compute the fingerprint for any subrange by traversing the tree in logarithmic time.
 
@@ -273,12 +277,12 @@ This approach appears in the literature as a building block for larger projects 
 Beyond a more general and precise formulation and a more detailed complexity analysis than prior work, we make several new contributions:
 
 \begin{itemize}
-    \item we reduce the time complexity of successive fingerprint computations by a logarithmic factor, while using only a constant amount of space,
+    \item we reduce the worst-case time complexity of successive fingerprint computations by a logarithmic factor, while using only a constant amount of space,
     \item we give an algebraic characterization of suitable fingerprint functions, and
     \item we survey suitable cryptographic fingerprints.
 \end{itemize}
 
-The organization of this article is as follows. We review related work in \cref{related-work}. We state the protocol for range-based reconciliation in \cref{reconciliation} and analyze its complexity. In \cref{sec:computation} we examine possible choices of fingerprints and show how to compute them efficiently. In \cref{secure} we examine how malicious actors can influence reconciliation and survey secure fingerprint functions that can protect against this, before concluding in \cref{conclusion}.
+The organization of this paper is as follows. We review related work in \cref{related-work}. We state the protocol for range-based reconciliation in \cref{reconciliation} and analyze its complexity. In \cref{sec:computation} we examine possible choices of fingerprints and show how to compute them efficiently. In \cref{secure} we examine how malicious actors can influence reconciliation and survey secure fingerprint functions that can protect against this, before concluding in \cref{conclusion}.
 
 \section{Related Work}\label{related-work}
 
@@ -302,7 +306,7 @@ This work has spawned several other approaches with a constant number of roundtr
 
 This approach eliminates CPI's cubic scaling of the computation time in $n_{\triangle}$. Reconciliation messages are precomputed in a \defined{partition tree} where a parent node includes subranges as children. Given a balanced partition tree, the reconciliation procedure has the same asymptotic worst-case complexity bounds as ours. The tree is not self-balancing however, so as reconcilliation adds more items to the set, the time complexity of local computations can degrade to $\complexity{n}$. Furthermore, the tree is specific to a particular choice of evaluation points and control points for the characteristic polynomial. When reusing the tree across multiple reconciliation sessions, these points have to be fixed in advance. This could allow an attacker to craft sets for which failed reconciliation is not detected.
 
-The \defined{Merkle Search Tree CRDT}~\cite{auvolat2019merkle} is similar to our approach, but using a pseudorandom tree construction. This enforces a rigid set representation and can degrade to a linear number of communication rounds for maliciously crafted sets. Our approach allows for free choice of search tree structure and number of recursion steps, guaranteeing a logarithmic number of communication rounds in the worst case.
+The \defined{Merkle Search Tree CRDT (MST)}~\cite{auvolat2019merkle} is similar to our approach, but using a pseudorandom tree construction. This enforces a rigid set representation and can degrade for maliciously crafted sets. Given that the probability for any item to be in level zero of an MST is constant irrespecive of other tree contents, one can easily craft trees that store all items in layer zero in expected linear time. For such trees, their protocol degrades to a trivial exchange of complete sets. Our approach allows for free choice of search tree structure and number of recursion steps, guaranteeing a logarithmic number of communication rounds in the worst case. While our computations are more expensive by some constant factor, they are still dwarved by the cost of network IO. Hence, their experimental average-case results make good approximations of our worst-case behavior.
 
 \section{Recursive Reconciliation}\label{reconciliation}
 
@@ -443,7 +447,7 @@ We restrict our presentation to reconciliation only, but all our results apply t
 
 \subsubsection{Termination and Correctness}
 
-Termination of \cref{protocol:rbsr} follow from an inductive argument. Small ranges and ranges with matching fingerprints are handled within a constant number of communication rounds, and the largest subrange in round $i$ strictly smaller than that of round $i - 1$.
+Termination of \cref{protocol:rbsr} follow from an inductive argument. Small ranges and ranges with matching fingerprints are handled within a constant number of communication rounds, and the largest subrange in round $i$ is strictly smaller than that of round $i - 1$.
 
 Correctness follows inductively as well. If fingerprints do not collide, ranges with equal fingerprints are reconciled correctly. Sending a range item set and receiving the response leads to both nodes storing the union of all items within that range. The subranges in the recursive case are reconciled correctly by induction hypothesis. And because the subranges cover the original range, this reconciles the original range.
 
@@ -453,7 +457,7 @@ The protocol allows responding to range fingerprints with a range item set, even
 
 We similarly assume that nodes split ranges into at most $b \in \N, b \geq 2$ subranges when recursing. Large $b$ reduce the number of roundtrips but transmit more fingerprints.
 
-In the following complexity analyses, $n_0$ and $n_1$ denote the number of items held by nodes \peer{0} and \peer{1} respectively. We let $n \defeq n_0 + n_1$, $n_{\min} \defeq \min(n_0, n_1)$ and $n_{\triangle} \defeq \abs{(X_0 \cup X_1) \setminus (X_0 \cap X_1}$.
+In the following complexity analyses, $n_0$ and $n_1$ denote the number of items held by nodes \peer{0} and \peer{1} respectively. We let $n \defeq n_0 + n_1$, $n_{\min} \defeq \min(n_0, n_1)$ and $n_{\triangle} \defeq \abs{(X_0 \cup X_1) \setminus (X_0 \cap X_1)}$.
 
 Observe that the range fingerprints of a protocol run form a rooted, $b$-ary \defined{communication tree}, compare \cref{simple-set-reconciliation-example}. When a leaf of the tree is reached, an exchange of range item sets follows.
 
@@ -591,7 +595,7 @@ $X_1 \defeq \{\examplea, \exampleb, \examplec, \exampled, \examplee, \examplef, 
 \label{fig:worst-bytes}
 \end{figure*}
 
-The size of each message is proportional to the number of vertices of the the corresponding depth in the communication tree, which is at most $n_{\triangle}$. This affects the space complexity for the participating nodes. If each node stores full messages in memory, the space complexity then is in $\complexity{n_{\triangle}}$ --- we will carefully choose fingerprints such that nodes can successively process each message part in $\complexity{1}$ space.
+The size of each message is proportional to the number of vertices of the corresponding depth in the communication tree, which is at most $n_{\triangle}$. This affects the space complexity for the participating nodes. If each node stores full messages in memory, the space complexity then is in $\complexity{n_{\triangle}}$ --- we will carefully choose fingerprints such that nodes can successively process each message part in $\complexity{1}$ space.
 
 Alternatively, nodes can split messages and transmit only a bounded number of message parts at a time. Once a message fragment has been processed and the corresponding, newly computed response message parts have been sent, the other node can transmit the next message parts.
 
@@ -727,7 +731,7 @@ Given a monoid tree $t$, we can compute $\lift{\f}{\mathcal{M}}\bigl(\range{x}{y
 
 Intuitively speaking, we trace paths from (the root of) $t$ to $x$ and $y$, and then we need to combine all values in the ``area between those paths''. The labels of the children of the vertices along these paths which lie within that area summarize this information, so it suffices to combine information from the out-neighborhood of the paths. If the tree is balanced, we thus only need to combine a logarithmic number of values.
 
-\Cref{alg:aggregate_once} gives the precise definition of the algorithm. First, we search for the first vertex reachable from the root that lies within the range (the procedure \textproc{find\_initial}). If no such vertex exists, the set contains no items within the range. If such an initial vertex exists however, it is necessarily unique. Assume toward a contradiction that there are two distinct such vertices $a \prec b$. Because $t$ is a search tree, the least common ancestor of $a$ and $b$ is also in the range, and it is closer to the root than both $a$ and $b$, a contradiction. Consequently, all items within the range are descendents of the initial vertex, which we name $init$.
+\Cref{alg:aggregate_once} gives the precise definition of the algorithm. First, we search for the first vertex reachable from the root whose value lies within the range (the procedure \textproc{find\_initial}). If no such vertex exists, the set contains no items within the range. If such an initial vertex exists however, it is necessarily unique. Assume toward a contradiction that there are two distinct such vertices $a \prec b$. Because $t$ is a search tree, the least common ancestor of $a$ and $b$ is also in the range, and it is closer to the root than both $a$ and $b$, a contradiction. Consequently, all items within the range are descendents of the initial vertex, which we name $init$.
 
 Because all items within the range are descendents of $init$ and $x \preceq init \prec y$, we have that \begin{align*}
 	\range{x}{y}{\V(t)} &= \set{z \in \V(\tl{init}) \mid z \succeq x} \disjointunion\\
@@ -917,12 +921,13 @@ Now that we have characterized a general family of functions that admit efficien
 we can define a fingerprint or hash function as follows:
 
 \begin{definition}
-A \defined{hash function} is a function $\fun{\h}{U}{D}$ with a finite codomain, such that, for randomly chosen $u \in U$ and $d \in D$, the probability that $\h(u) = d$ is roughly\footnote{To keep our focus on set reconciliation rather than cryptography, we keep arguments about probabilities qualitative rather than quantitative at this point.} $\frac{1}{\abs{D}}$. $\h(u)$ is called the \defined{hash of $u$}, \defined{fingerprint of $u$} or \defined{digest of $u$}.
+A \defined{hash function} is a function $\fun{\h}{U}{D}$ with a finite codomain, such that the probability of mapping two randomly chosen values to the same image is negligible\footnote{To keep our focus on set reconciliation rather than cryptography, we keep arguments about probabilities qualitative rather than quantitative at this point.}. $\h(u)$ is called the \defined{hash of $u$}, \defined{fingerprint of $u$} or \defined{digest of $u$}.
+% A \defined{hash function} is a function $\fun{\h}{U}{D}$ with a finite codomain, such that, for randomly chosen $u \in U$ and $d \in D$, the probability that $\h(u) = d$ is roughly\footnote{To keep our focus on set reconciliation rather than cryptography, we keep arguments about probabilities qualitative rather than quantitative at this point.} $\frac{1}{\abs{D}}$. $\h(u)$ is called the \defined{hash of $u$}, \defined{fingerprint of $u$} or \defined{digest of $u$}.
 \end{definition}
 
 To efficiently compute fingerprints for arbitrary ranges, we use \somewhatmorphisms{} $\lift{\f}{\mathcal{M}}$ that serve as hash functions from $\powerset{U}$. As $\lift{\f}{\mathcal{M}}(\set{u})$ is equal to $\f(u)$, $\f$ must itself already be a hash function. Typical hash functions map values to bit strings of a certain length, i.e., the codomain is $\set{0, 1}^k$ for some $k \in \N$. We will thus consider monoids whose elements can be represented by such bit strings.
 
-A natural choice of the monoid universe is then $\range{0}{2^k}{\N}$, some simple monoidal operations on this universe include bitwise xor, addition modulo $2^k$, and multiplication modulo $2^k$. Of these three options, multiplication is the least suitable, because multiplying any number by $0$ yields $0$. Consequently, for every set containing an item $u$ with $\f(u) = 0$, the fingerprint of the set is $0$, which clearly violates the criterion that all possible values for fingerprints occur with equal probability.
+A natural choice of the monoid universe is then $\range{0}{2^k}{\N}$, some simple monoidal operations on this universe include bitwise xor, addition modulo $2^k$, and multiplication modulo $2^k$. Of these three options, multiplication is the least suitable, because multiplying any number by $0$ yields $0$. Consequently, for every set containing an item $u$ with $\f(u) = 0$, the fingerprint of the set is $0$, which clearly violates the criterion of negligible probabilities of hash collisions.
 
 The monoid operation preserves a good distribution of fingerprints if any given fingerprint can be obtained from any particular fingerprint by combining it with some third one, i.e., if, for every $x \in M$, $\lambda y.x \groupaddsym y$ is a bijection. Addition and xor satisfy this criterium, as does in fact every finite commutative group $\mathcal{G} = (G, \groupaddsym, -)$: for every $x, z \in M$ there exists $y \in M$ such that $x \groupaddsym y = z$, by choosing $y \defeq z \groupaddsym -x$, because then $x \groupaddsym y = x \groupaddsym z \groupaddsym (-x) = x \groupaddsym (-x) \groupaddsym z = z$. Hence, $\lambda y.x \groupaddsym y$ is surjective, and, because $G$ is finite, the function is also injective.
 
@@ -997,7 +1002,7 @@ The path from some lower boundary $x$ to some upper boundary $y$ consists of som
 
 \subsection{Impact of Hash Collisions}
 
-We distinguish between \defined{active} adversaries who can who can select the sets to be reconciled, and \defined{passive} adversaries who needs to find and cause collisions in existing sets. If fingerprints are bit strings of length $k$, every set of size at least $k + 1$ contains two subsets with the same fingerprint. We primarily focus on active adversaries, as they are more powerful.
+We distinguish between \defined{active} adversaries who can select the sets to be reconciled, and \defined{passive} adversaries who needs to find and cause collisions in existing sets. If fingerprints are bit strings of length $k$, every set of size at least $k + 1$ contains two subsets with the same fingerprint. We primarily focus on active adversaries, as they are more powerful.
 
 Fingerprint collisions result in parts of the set not being synchronized, so information is being withheld from one or both of the nodes. When a malicious node synchronizes with an honest one, the malicious node can withhold arbitrary information by simply pretending not to have certain data, which does not require finding collisions at all. So the actually interesting cases are those where a malicious node can cause honest nodes to incompletely reconcile amongst themselves.
 
@@ -1005,41 +1010,40 @@ Specifically: let $\mathcal{M}$ be a malicious node, $\mathcal{A}$ and $\mathcal
 
 Let $S_A \subseteq X_A$ and $S_B \subseteq X_B$ be nonequal sets with the same fingerprint. To have any impact on the correctness of a particular protocol run, their two fingerprints need to actually be compared during that run. For that to happen, there have to be $x, y \in U$ such that $S_A = \range{x}{y}{X_A}$ and $S_B = \range{x}{y}{X_B}$. This alone is not sufficient, as only a low number of pairs of such sets are actually compared in a single run.
 
-Nodes can randomize the split points when determining subranges to bound the probability that a given pair of colliding sets is compared in a single protocol run. They can, e.g., split ranges into equally-sized subranges first, but then randomly shift the range boundaries by a small number of items. This preserves a logarithmic number of communication rounds in the worst case. They can even choose $b$ subrange boundaries fully at random. The expected number of communication rounds is in $\complexity{\log_b(n)} = \complexity{\log(n)}$ with high probability, as it corresponds to the height of a randomly chosen $b$-complete tree~\cite{devroye1990height}.
+Nodes can randomize the split points when determining subranges to bound the probability that a given pair of colliding sets is compared in a single protocol run. They can, e.g., split ranges into evenly sized subranges first, but then randomly shift range boundaries by a small number of items. This preserves a logarithmic number of communication rounds in the worst case. They can even choose $b$ subrange boundaries fully at random. The expected number of communication rounds is in $\complexity{\log_b(n)} = \complexity{\log(n)}$ with high probability, as it corresponds to the height of a randomly chosen $b$-complete tree~\cite{devroye1990height}.
 
 This argument is however only qualitative and should be enjoyed with caution. A strong attacker might be able to find many pairs of sets of colliding fingerprints, or many sets that all share the same fingerprint.
 
 \subsection{Cryptographically Secure Fingerprints}
 
-For stronger guarantees, we thus look for cryptographically secure fingerprint functions that make it computationally infeasible for an adversary to find colliding fingerprints.
-
-A typical definition of cryptographically secure hash functions is the following~\cite{menezes2018handbook}:
+For stronger guarantees, we thus look for cryptographically secure fingerprint functions that make it infeasible for an adversary with realistically bounded computational resources to find colliding fingerprints.
 
 \begin{definition}
-A \defined{secure hash function} is a hash function $\fun{\h}{U}{D}$ that satisfies three additional properties:
+A \defined{secure hash function} is a hash function $\fun{\h}{U}{D}$ that satisfies three additional properties~\cite{menezes2018handbook}:
 
 \begin{description}
   \item[pre-image resistance:] Given $d \in D$, it is computationally infeasible to find a $u \in U$ such that $\h(u) = d$.
   \item[second pre-image resistance:] Given $u \in U$, it is computationally infeasible to find a $u' \in U, u' \neq u$ such that $\h(u) = \h(u')$.
-  \item[collision resistance:] It is computationally infeasible to find $u, v \in U, u ~= v$ such that $\h(u) = \h(v)$.
+  \item[collision resistance:] It is computationally infeasible to find $u, v \in U, u \neq v$ such that $\h(u) = \h(v)$.
 \end{description}
 \end{definition}
 
-What do secure fingerprints for our sets look like? Since $\lift{\f}{\mathcal{M}}(\set{u}) = \f(u)$, $\f$ must necessarily be a secure hash function if $\lift{\f}{\mathcal{M}}$ is to be one. More interesting is the choice of monoid.
+What do secure fingerprints for our sets look like? Since $\lift{\f}{\mathcal{M}}(\set{u}) = \f(u)$, $\f$ must be a secure hash function for $\lift{\f}{\mathcal{M}}$ to be one. More interesting is the choice of monoid.
 
-Bellare and Micciancio~\cite{bellare1997new} propose incremental hashing of strings by first hashing substrings and then combining the hashes according to some commutative group operation --- the groups they study are also possible candidates for our construction. After showing how to efficiently find collisions when using xor for combining hashes, they consider three more robust groups.
+Bellare and Micciancio~\cite{bellare1997new} propose incremental hashing of strings by first hashing substrings and then combining the hashes according to some commutative group operation. After showing how to efficiently find collisions when using xor for combining hashes, they consider three more robust groups.
 
 % We now present further monoids that have been studied in the construction of secure hash functions. The seminal~\cite{bellare1997new} considers secure hash functions for strings such that the hash of the concatenation of two strings can be efficiently computed from the hashes of the two strings. By considering sets as strings of their items in ascending order, the functions studied in~\cite{bellare1997new} can also be applied to our sets. After demonstrating the unsuitability of xor, the authors consider addition modulo the total number of possible hashes, and the multiplicative group $\Z_n^\ast$, the group yielded by multiplication modulo $n$ on the set $\set{x \in \range{0}{n}{\N} \mid \text{$x$ is coprime to $n$}}$.
 
 They unify parts of their discussion by relating the hardness of finding collisions to solving the balance problem: in a commutative group $(G, \groupaddsym, \neutraladd)$, given a set of group elements $S = \set{s_1, s_2, \ldots, s_n}$, find disjoint, nonempty subsets $S_0 = \set{s_{0, 0}, s_{0, 1}, \ldots, s_{0, k}} \subseteq S, S_1 = \set{s_{1, 0}, s_{1, 1}, \ldots, s_{1, l}} \subseteq S$ such that $s_{0, 0} \groupaddsym s_{0, 1}  \groupaddsym \ldots  \groupaddsym s_{0, k} = s_{1, 0}  \groupaddsym s_{1, 1}  \groupaddsym \ldots  \groupaddsym s_{1, l}$. They then reduce the hardness of the balance problem to other problems, depending on the specific group.
 
-One group operation they consider is addition modulo the group size. The balance problem is as hard as subset sum for this group, which was conjectured to be sufficiently hard. Wagner showed however how to solve the balance problem in subexponential time for addition~\cite{wagner2002generalized}. Lyubashevsky later strengthened the attack, finding collisions in $\complexity{2^{n^\epsilon}}$ for arbitrary $\epsilon < 1$. A more recent proposal suggesting addition for combining SHA-3~\cite{dworkin2015sha} digests hence proposes fingerprints of length between $2688$ and $4160$ or $6528$ to $16512$ bits to achieve security levels of $128$ or $256$ bit respectively~\cite{mihajloska2015reviving}.
+One group operation they consider is addition modulo the group size. The balance problem is as hard as subset sum for this group, which was conjectured to be sufficiently hard. Wagner~\cite{wagner2002generalized} showed however how to solve the balance problem in subexponential time for addition. Lyubashevsky~\cite{lyubashevsky2005parity} later strengthened the attack, finding collisions in $\complexity{2^{n^\epsilon}}$ for arbitrary $\epsilon < 1$. A more recent proposal suggesting addition for combining SHA-3~\cite{dworkin2015sha} digests hence proposes fingerprints of length between $2688$ and $4160$ or $6528$ to $16512$ bits to achieve security levels of 128 or 256 bit respectively~\cite{mihajloska2015reviving}, i.e., the best known attacks require at least $2^{128}$ or $2^{256}$ steps.
 
-Another candidate group is $\Z_n^\ast$, the group yielded by multiplication modulo $n$ on the set $\set{x \in \range{0}{n}{\N} \mid \text{$x$ is coprime to $n$}}$. The balance problem is as hard as the discrete logarithm problem in these groups; this is hard for groups of prime order and for $\Z_p^\ast$ where $p$ is prime~\cite{bellare1997new}. Multiplication is however less efficient to compute than addition, benchmarks show that the additive hash outperforms the multiplicative one by two orders of magnitude, even though the additive hash uses longer digests to account for Wagner's attack~\cite{stanton2010fastad}. Fingerprints based on multiplication still need larger digests than traditional, non-incremental hash functions, Maitin-Shepard et al.~\cite{maitin2017elliptic} suggests fingerprints of $3200$ bit to achieve $128$ bit security.
+Another candidate group is $\Z_n^\ast$, the group yielded by multiplication modulo $n$ on the set $\set{x \in \range{0}{n}{\N} \mid \text{$x$ is coprime to $n$}}$. The balance problem is as hard as the discrete logarithm problem in these groups; this is hard for groups of prime order and for $\Z_p^\ast$ where $p$ is prime~\cite{bellare1997new}. Multiplication is however less efficient to compute than addition, benchmarks show that the additive hash outperforms the multiplicative one by two orders of magnitude, even when the additive hash uses longer digests to account for Wagner's attack~\cite{stanton2010fastad}. Fingerprints based on multiplication still need larger digests than traditional, non-incremental hash functions, Maitin-Shepard et al.~\cite{maitin2017elliptic} suggests fingerprints of $3200$ bit to achieve $128$ bit security.
 
-The last candidate group partitions bitstrings into smaller strings and performs component-wise addition. Collision resistance is related to the hardness of the shortest lattice vector approximation problem~\cite{ajtai1996generating}. A recent instantiation provides 200 bits of security with fingerprints of size $16 \cdot 1024 = 16384$ bit~\cite{lewi2019securing}.
+The final candidate group partitions bitstrings into smaller strings and performs component-wise addition. Collision resistance is related to the hardness of the shortest lattice vector approximation problem~\cite{ajtai1996generating}. A recent instantiation provides 200 bits of security with fingerprints of size $16384$ bit~\cite{lewi2019securing}.
 
-Bellare and Micciancio's hash functions are \defined{multiset homomorphic}~\cite{clarke2003incremental}:
+All of these hash functions are \defined{multiset homomorphic}~\cite{clarke2003incremental}:
+% Bellare and Micciancio's hash functions are \defined{multiset homomorphic}~\cite{clarke2003incremental}:
 
 \begin{definition}
 Let $\mathcal{U}_0 \defeq (U_0, \groupaddsym_0, \neutraladd_0)$ and $\mathcal{U}_1 \defeq (U_1, \groupaddsym_1, \neutraladd_1)$ be monoids, and let $\fun{\f}{U_0}{U_1}$.
@@ -1061,7 +1065,7 @@ Because multiset union is commutative, so is necessarily any multiset homomorphi
 
 % While~\cite{tillich1994hashing}, an improvement over the originally proposed scheme, has been successfully attacked in~\cite{grassl2011cryptanalysis} and~\cite{petit2010preimages}, there are several modifications such as~\cite{petit2009graph}\cite{bromberg2017navigating}\cite{sosnovski2016cayley} for which no attacks are known; and~\cite{mullan2016text} shows random self-reducibility for Cayley hash functions.
 
-Aside from Cayley hashes, we are not aware of any non-commutative monoids used for hashing. Note that even cayley hashes have more more structures than we need, as we don't require existence of inverse elements.
+Aside from these Cayley hashes, we are not aware of any non-commutative monoids used for hashing. Note that even Cayley hashes have more more structures than we need, as we do not require existence of inverse elements.
 
 Regardless of the choice of monoid, the reconciliation protocol can exchange (conventional) hashes of fingerprints rather than exchanging fingerprints directly. This allows us to use large fingerprints to achieve security (e.g., using bitwise additions on long bitstrings as the monoid), while still transmitting only a small number of bits over the wire. The large fingerprints do however increase the space consumption of the monoid tree. Whether a computationally expensive monoid operation on small bitstrings outperforms a cheaper operation on larger bitstrings is hence not obvious and requires benchmarking to make an informed choice.
 
@@ -1071,28 +1075,30 @@ We consider range-based set reconciliation to be an important complement to the 
 
 The asymmetric scenario where one node operates using only a constant amount of working memory is unique among all proposed schemes. The option of using a more sophisticated reconciliation procedure once ranges have become small enough can make it worth a consideration in almost any reconciliation scenario.
 
-We have deliberately restricted our focus to the very core issues of the range-based approach. There is a large number of engineering issues and possible generalizations, for example,
+We have deliberately restricted our focus to the very core issues of the range-based approach. Avenues for future exploration include generalizing to multidimensional ranges; identifying other expressive partitioning/covering schemes, and data structures for efficiently computing the fingerprints for such partitions; generalizing to reconciliation/mirroring of maps (with proper conflict resolution when both peers map equal keys to different values); changing the monoid tree to a tree of higher degree with item storage in the leaves only, as would be typical for IO-efficient persistence on secondary storage;  generalizing from two-party reconciliation to multi-party reconciliation; or adapting the protocol to unordered and/or unreliable transports.
 
-\begin{itemize}
-	\item generalizing to multidimensional ranges,
-	\item identifying other expressive partitioning/covering schemes, and data structures for efficiently computing the fingerprints for such partitions,
-	\item generalizing to reconciliation/mirroring of maps (with proper conflict resolution when both peers map equal keys to different values),
-	\item changing the monoid tree to a tree of higher degree with item storage in the leaves only, as would be typical for IO-efficient persistence on secondary storage,
-	\item investigating how to efficiently relay changes to a partially reconciled set when running multiple reconciliation sessions concurrently or in parallel,
-	\item generalizing from two-party reconciliation to multi-party reconciliation, or
-	\item adapting the protocol to unordered and/or unreliable transports.
-\end{itemize}
+% There is a large number of engineering issues and possible generalizations, for example,
+
+% \begin{itemize}
+% 	\item generalizing to multidimensional ranges,
+% 	\item identifying other expressive partitioning/covering schemes, and data structures for efficiently computing the fingerprints for such partitions,
+% 	\item generalizing to reconciliation/mirroring of maps (with proper conflict resolution when both peers map equal keys to different values),
+% 	\item changing the monoid tree to a tree of higher degree with item storage in the leaves only, as would be typical for IO-efficient persistence on secondary storage,
+% 	\item investigating how to efficiently relay changes to a partially reconciled set when running multiple reconciliation sessions concurrently or in parallel,
+% 	\item generalizing from two-party reconciliation to multi-party reconciliation, or
+% 	\item adapting the protocol to unordered and/or unreliable transports.
+% \end{itemize}
 
 So above all, we hope to bring more attention to the range-based approach, as the sparse treatment it has received in the literature so far does not do justice to its practical applicability.
 
 \section{Acknowledgments}
 
-Anonymized Person
-% Jan Winkelmann
- contributed the idea of compressing fingerprints with a hash function before transmission.
+Jan Winkelmann contributed the idea of compressing fingerprints with a hash function before transmission.
 
-\bibliographystyle{alphaurl}
-\bibliography{main}
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,main}
+% \bibliographystyle{alphaurl}
+% \bibliography{main}
 \end{document}
 
 % - outlook: kd-trees, b-trees, tries, parallel sessions, multi-party, key-value (and conflicts), unordered or unreliable transport, protocol engineering

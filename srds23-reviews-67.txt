@@ -1,0 +1,146 @@
+My Rebuttal:
+
+Three points of disagreement:
+
+General, re absence of an empirical evaluation: Inclusion of empirical results would improve the paper if it would not imply omission of other material due to the page limit. We prefer a comprehensive theoretic treatment over a incomplete theoretic treatment together with some completely unsurprising experimental results. We can (and probably should) state more clearly how our performance relates to that of [AT19] (which does include measurements): we have at most the same number of roundtrips, but quite often strictly fewer (their recursion tree has probabilistic depth, ours has always minimal depth). Their computation per step requires a single lookup in the tree representation, ours effectively requires two such lookups and a few computations in the monoid. Neither would be particularly relevant compared to the cost of network IO, particularly if the tree resides in memory, as in [AT19]. Any experiment where these computations affect the actual reconciliation time would say more about the degree of optimization in the search tree implementation (and whether it is a main memory data structure as in the [AT19] experiments or a proper on-disk data structure) than about our algorithm.
+A comprehensive experimental study of the effect of different implementation choices for the trees, particularly on secondary storage, could easily fill its own paper. But anything we could squeeze into this expository submission is, frankly, boring and uninteresting.
+
+Review #67A, re "not directly related to [...] dependability, security, and privacy": Existing approaches with large computational and memory requirements are not dependable. All prior existing schemes that reduce these requirements via logarithmically many roundtrips only achieve an expected-case bound, not a worst-case bound. Ours is the *first* and *only nontrivial* dependable solution. We can easily emphasize this contribution more strongly in our presentation; in particular we could explicitly state how an adversary can trivially degrade the construction of [AT19] into a flat array.
+
+Review #67D, re "theoretical contributions seem somewhat incremental": We agree that none of what we propose is rocket science, but the difference from [CEG+99] section 3.6 to our work is substantial. If none of these improvements over [CEG+99] - including an asymptotic improvement - have been published in 24 years, and yet our framing makes them feel unremarkable *in hindsight*, should that not be a good thing?
+
+++
+
+
+
+
+
+Three points of disagreement:
+ 
+Regarding absence of an empirical evaluation: Inclusion of empirical results would improve the paper if and only if it would not require omission of other material due to the page limit. We prefer a comprehensive theoretic treatment over an incomplete theoretic treatment together with some completely unsurprising experimental results. We can (and probably should) state more clearly how our performance relates to that of [AT19] (which does include measurements): Their number of roundtrips fluctuates, whereas ours can be controlled strictly. Take the average of enough of their executions (and note that they do report on averages only), and you get the results that our approach can guarantee in every individual execution. Their computation per fingerprint requires a single lookup in the tree representation, ours  requires (effectively) two such lookups and a few computations in the monoid. Neither would be particularly relevant compared to the cost of network IO, particularly if the tree resides in main memory (which it does for the experiments in [AT19]). Any experiment where these computations affect the actual reconciliation time would say more about the degree of optimization in the search tree implementation (and whether it is a main memory data structure as in the [AT19] experiments or a proper on-disk data structure) than about our algorithm.
+A comprehensive experimental study of the effect of different implementation choices for the trees for our algorithm and that of [AT19], particularly on secondary storage, could easily fill its own paper. But anything we could squeeze into this expository submission is, frankly, unsurprising and superficial. But we can (and should) easily argue why the [AT19] results provide an upper bound to ours, not only on average but in the worst case.
+ 
+Review #67A, regarding "not directly related to [...] dependability, security, and privacy": Existing approaches with large computational and memory requirements are not dependable. All prior existing schemes that reduce these requirements via logarithmically many roundtrips only achieve an expected-case bound, not a worst-case bound. Ours is the *first* and *only nontrivial* dependable solution. We can easily emphasize this contribution more strongly in our presentation; in particular we could explicitly state how an adversary can trivially degrade the construction of [AT19] (which was punblished at SRDS after all) into a flat array if the data in question allows for syntactic variations without any semantic impact (whitespace in json for example).
+ 
+Review #67D, regarding "theoretical contributions seem somewhat incremental": We agree that none of what we propose is rocket science, but the difference from [CEG+99] section 3.6 to our work is substantial. Arriving at a presentation that makes the first improvements in 24 years - including an asymptotic improvement - feel unremarkable *in hindsight* has not been trivial or incremental.
+
+The other points we agree with and should be simple to mitigate.
+
+
+SRDS2023 Paper #67 Reviews and Comments
+===========================================================================
+Paper #67 Range-Based Set Reconciliation
+
+
+Review #67A
+===========================================================================
+
+Overall merit
+-------------
+2. Weak reject
+
+Reviewer expertise
+------------------
+1. No familiarity
+
+Paper summary
+-------------
+In distributed and networked systems, it is common for two nodes, each having a local set, to compute the union of their sets while minimizing the amount of transferred data. This problem is known as set reconciliation. This paper proposes an efficient solution for solving this problem; the solution comprises two algorithms: recursive reconciliation and fingerprint computation. In recursive reconciliation, given two nodes, each node computes a fingerprint of its local set. Then, it sends the fingerprint to the other node. The other node compares the received fingerprint with the fingerprint computed based on its local set. If these fingerprints are equal, then the sets are equal, and there is no need to compute the union of the sets. However, if the fingerprints differ, the receiver splits its set into two subsets, computes two fingerprints, and sends them to the other node. The other node splits its set into two sets, and this procedure recursively continues until finding the differences between the sets. Then, nodes send the different parts, minimizing the amount of transferred data.
+
+Comments for authors
+--------------------
+Strengths:
+The investigated problem (computing the union of two sets while minimizing the amount of transferred data) is of practical interest.
+ 
+Weaknesses:
+The main weakness of the paper is that it may not be directly related to the conference topics of dependability, security, and privacy of distributed systems; it is more related to computer communication, as two related works-- [EGUV11] and [MT02]-- were published in computer communication journals.
+
+
+
+Review #67B
+===========================================================================
+
+Overall merit
+-------------
+5. Strong accept
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Paper summary
+-------------
+The paper presents a formal algorithmic framework to implement set reconciliation protocols based on a divide-and-conquer approach revolving around exchanging range fingerprints. The authors then explain how the framework can be instantiated using lift functions via a monoid to define monoid trees. This provides a natural approach to using hash functions to compute a fingerprint representation of set ranges and to instantiate the reconciliation framework proposed by the authors. The last section discusses adversarial environments. Along the way, the authors analyze the time and bit complexity of their proposal. In particular, the resulting algorithm provides both algorithmic round trips and computational complexity in the worst case.
+
+Comments for authors
+--------------------
+The paper is very well written, flows easily, and is easy to grasp despite its theoretical take on the set reconciliation problem. The gist of the proposed approach is similar to that of [AT19]. But the submission provides an elegant formal framework informed by algebraic considerations that nicely covers the whole space of this family of algorithms and offers a deeper formal treatment than this original publication. As a trade-off, this submission is purely theoretical (while [AT19] contained some experiments).
+
+Other comments/questions:
+- In Section 3.C.2, page 4, it would be nice to have |U| and t appear in the complexity bound (rather than treat them as constant). |U|, in particular, can be quite large in some instances.
+- In Section 4.B, page 6, you refer to the `first vertex [..] that lies within the range'. Formally (cf. Definition 5), a vertex is a triplet, which makes this earlier statement ambiguous. I assume you are referring to `t.v' here, the vertex value.
+- Definition 8 is confusing. Considering a map f: U \to D with D finite, if one fixes u\in U, and draws d\in D uniformly at random, then the probability that f(u)=d is exactly 1/|D|. I assume you therefore mean something different here and that h is taken randomly from a family of hash functions (in which case u and d are fixed, and the probability you refer to is over the family of hash functions).
+- In Sec 5, you might want to refine what `computationally infeasible' exactly means, e.g. in a footnote. All 3 problems you mention can be solved by brute force when U and D are finite, so they are `computable' (and feasible within an acceptable time if one has enough computing power).
+- On page 10, what are `security levels'?
+
+Minor presentation issues:
+- On page 3, Case 2, a comma appears missing in the tuple between [x,y)_{X_i} and 0.
+- Page 3, 3.C.1, "the largest subrange in round $i$ *is*" (`is' seems missing).
+- "fig. xx" and "alg. xx" are usually capitalized.
+- On a few occasions, words are doubled: e.g. p4, bottom of first column "the the corresponding depth", or start of Sec. 5.A "adversaries who can who can select".
+
+
+
+Review #67C
+===========================================================================
+
+Overall merit
+-------------
+3. Weak accept
+
+Reviewer expertise
+------------------
+1. No familiarity
+
+Paper summary
+-------------
+This paper presents the range-based set reconciliation approach to compute the union of two sets over a network. The approach relies on recursive partitioning and fingerprints comparison, and provides both logarithmic roundtrips and computational complexity  proportional to the size of the symmetric difference.
+
+Comments for authors
+--------------------
+The paper is well written and organized. The contribution is clearly presented and the relation to the state of the art is well detailed. The paper also proposes a solution to protect the set reconciliation against adversaries based on cryptographically secure fingerprints.
+The paper is quite comprehensive but I am wondering if to better illustrate the benefits of the solution, some experiments and comparison with state of the art solutions could have been done.
+
+As the range approach could be used in a wider scope, a presentation of this paper could draw more attention to the possibilities of the approach.
+
+Typo:
+Section 3.C - the the corresponding
+Section 5.B - Wagner showed -> Wagner [Wag02] showed 
+Section 5.B - Lyubashevsky later -> Lyubashevsky [ref] later
+Section 5.B - Aside from Cayley hashes, -> Aside from Cayley hashes [ref], 
+Section 5.B - even cayley hashes … don’t -> even Cayley hashes … do not 
+
+I don’t think the format of the references follows the guidelines.
+
+
+
+Review #67D
+===========================================================================
+
+Overall merit
+-------------
+3. Weak accept
+
+Reviewer expertise
+------------------
+2. Some familiarity
+
+Paper summary
+-------------
+The paper investigates algorithms for efficient range-based reconciliation of sets via fingerprinting schemes. After deriving a general formulation of this class of algorithms and improving prior complexity analysis, the paper: i) proposes optimizations to reduce the worst-case time complexity of successive fingerprint computations, and ii) gives an algebraic characterization of suitable fingerprint functions both in the presence of honest and malicious nodes.
+
+Comments for authors
+--------------------
+This is a very well written paper, which investigates from a theoretical perspective a fundamental and relevant problem in the distributed systems area. 
+
+Overall, this appears to be a paper that may be interesting for the SRDS community. On the down side, the paper has no empirical evaluation and the theoretical contributions seem somewhat incremental.
