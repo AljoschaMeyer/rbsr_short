@@ -1,27 +1,7 @@
-% Options for packages loaded elsewhere
 \PassOptionsToPackage{unicode}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
 
-% \documentclass[acmsmall,nonacm,anonymous]{acmart}
-% \documentclass[sigplan,screen,10pt]{acmart}
 \documentclass[conference]{IEEEtran}
-% \documentclass[journal]{IEEEtran}
-
-%% Rights management information.  This information is sent to you
-%% when you complete the rights form.  These commands have SAMPLE
-%% values in them; it is your responsibility as an author to replace
-%% the commands and values with those provided to you when you
-%% complete the rights form.
-%\setcopyright{acmcopyright}
-%\copyrightyear{2021}
-%\acmYear{2021}
-%\acmDOI{tba}
-
-% These commands are for a PROCEEDINGS abstract or paper.
-% \acmConference[Just a Draft]{Just a Draft}{Just a Draft}{Just a Draft}
-% \acmBooktitle{Just a Draft}
-% \acmPrice{Just a Draft}
-% \acmISBN{Just a Draft}
 
 \usepackage{hyperref}
 \usepackage{amsmath}
@@ -266,7 +246,7 @@ Another use case is that of replication and mirroring in distributed database sy
 
 There exist sophisticated protocols~\cite{eppstein2011s} that solve set reconciliation in a constant number of communication rounds and with communication complexity linear in the size of the symmetric difference. These impressive bounds are provably optimal~\cite{minsky2003set}, but computing the necessary messages requires time and space linear in the size of the local set, even if the symmetric difference is small.
 
-These computational costs can be prohibitive for large sets; also such approaches are conceptually complex and do not discuss how maliciously crafted sets can lead to faulty reconciliation. For reliable practical deployment, we hence look for a conceptually simple solution with low computational complexity and protection against malicious inputs. We believe that optimizing these metrics can be more important than over-optimizing communication complexity.
+These computational costs can be prohibitive for large sets; furthermore, such approaches are conceptually complex and rarely consider how maliciously crafted sets can lead to faulty reconciliation. For reliable practical deployment, we hence look for a conceptually simple solution with low computational complexity and protection against malicious inputs. We believe that optimizing these metrics can be more important than over-optimizing communication complexity.
 
 \defined{Range-based set reconciliation} has space complexity linear in the size of the symmetric difference of the sets, and time complexity linear in the size of the symmetric difference or the logarithm of the size of the local set, whichever is greater. This comes at the cost of a logarithmic number of communication rounds, as the procedure follows a straightforward divide-and-conquer approach: the sets are sorted according to some total order, and nodes initiate reconciliation by sending a fingerprint of all their local items within a certain range. Upon receiving a pair of range delimiters and a fingerprint, a node computes the fingerprint of all of its own local items within that range. If the fingerprints match, the range has been successfully reconciled. Otherwise the node splits the range into smaller subranges, and initiates reconciliation for these new ranges. Whenever a node receives the fingerprint of the empty set, it transmits all its local items within that range to its peer.
 
@@ -290,7 +270,7 @@ Prior mentions of range-based set reconciliation~\cite{chen1999prototype}\cite{s
 
 Most reconciliation literature focuses on reconciliation in a single communication round, at the price of high computational costs. None of the prior work considers maliciously crafted inputs. In the following discussion, we assume nodes $\mathcal{X}_0, \mathcal{X}_1$ holding sets $X_0, X_1 \subseteq U$ respectively. $n_{\triangle}$ is the size of the symmetric difference of $X_0$ and $X_1$.
 
-The seminal work on set reconciliation introduces \defined{characteristic polynomial interpolation} (CPI)~\cite{minsky2003set}. Given an approximation of $n_{\triangle}$, the total number of transmitted bits is proportional to $n_{\triangle}$, which is more efficient than the range-based approach. The required interpolation of polynomials is reduced to performing Gaussian elimination however, which takes $\complexity{n_{\triangle}^3}$ time.
+The pioneering work on set reconciliation introduces \defined{characteristic polynomial interpolation} (CPI)~\cite{minsky2003set}. Given an approximation of $n_{\triangle}$, the total number of transmitted bits is proportional to $n_{\triangle}$, which is more efficient than the range-based approach. The required interpolation of polynomials is reduced to performing Gaussian elimination however, which takes $\complexity{n_{\triangle}^3}$ time.
 
 The authors further propose a strategy for approximating $n_{\triangle}$ over a logarithmic number of communication rounds. CPI then requires the same number of roundtrips as range-based reconciliation, but at higher computational complexity.
 
@@ -306,7 +286,7 @@ This work has spawned several other approaches with a constant number of roundtr
 
 This approach eliminates CPI's cubic scaling of the computation time in $n_{\triangle}$. Reconciliation messages are precomputed in a \defined{partition tree} where a parent node includes subranges as children. Given a balanced partition tree, the reconciliation procedure has the same asymptotic worst-case complexity bounds as ours. The tree is not self-balancing however, so as reconcilliation adds more items to the set, the time complexity of local computations can degrade to $\complexity{n}$. Furthermore, the tree is specific to a particular choice of evaluation points and control points for the characteristic polynomial. When reusing the tree across multiple reconciliation sessions, these points have to be fixed in advance. This could allow an attacker to craft sets for which failed reconciliation is not detected.
 
-The \defined{Merkle Search Tree CRDT (MST)}~\cite{auvolat2019merkle} is similar to our approach, but using a pseudorandom tree construction. This enforces a rigid set representation and can degrade for maliciously crafted sets. Given that the probability for any item to be in level zero of an MST is constant irrespecive of other tree contents, one can easily craft trees that store all items in layer zero in expected linear time. For such trees, their protocol degrades to a trivial exchange of complete sets. Our approach allows for free choice of search tree structure and number of recursion steps, guaranteeing a logarithmic number of communication rounds in the worst case. While our computations are more expensive by some constant factor, they are still dwarved by the cost of network IO. Hence, their experimental average-case results make good approximations of our worst-case behavior.
+The \defined{Merkle Search Tree CRDT (MST)}~\cite{auvolat2019merkle} is similar to our approach, but using a pseudorandom tree construction. This enforces a rigid set representation and can degrade for maliciously crafted sets. Given that the probability for any item to be in level zero of an MST is constant irrespecive of other tree contents, one can easily craft trees that store all items in layer zero in expected linear time. For such trees, MST reconciliation degrades to a trivial exchange of complete sets. Our approach allows for free choice of search tree structure and number of recursion steps, guaranteeing a logarithmic number of communication rounds in the worst case. While our computations are more expensive by some constant factor, they are still dwarved by the cost of network IO. Hence, the experimental average-case results of MST reconciliation make for good approximations of our worst-case behavior.
 
 \section{Recursive Reconciliation}\label{reconciliation}
 
@@ -331,7 +311,7 @@ The \defined{range from $x$ to $y$ in $S$}, denoted by $\range{x}{y}{S}$, is the
 
 \subsection{Protocol Description}
 
-In a given communication round, a node receives information about some subranges of the sets to be reconciled. For each such subrange, it receives either a fingerprint of the items the other node has in that range, or it receives those items directly. The node answers with information about new ranges; partitioning ranges into subranges if neither the received fingerprint matches the fingerprint of the local items within that range nor the range contains few enough items to transmit them directly. We precisely specify the vocabulary by which nodes exchange information in \cref{def:messages}:
+In a given communication round, a node receives information about some subranges of the sets to be reconciled. For each such subrange, it receives either a fingerprint of the items the other node has in that range, or it receives those items themselves. The node answers with information about new ranges; partitioning ranges into subranges if neither the received fingerprint matches the fingerprint of the local items within that range nor the range contains few enough items to transmit them directly. We precisely specify the vocabulary by which nodes exchange information in \cref{def:messages}:
 
 \begin{definition}
 \label{def:messages}
@@ -436,7 +416,7 @@ In the final communication round, \peer{0} receives the two range item sets and 
 \label{simple-set-reconciliation-example}
 \end{figure*}
 
-\subsection{Range-Base Set Mirroring}
+\subsection{Range-Based Set Mirroring}
 
 Set mirroring is the problem of efficiently transferring a set from a \defined{primary} node to a \defined{replica} node, utilizing similarities between the primary's set and the outdated version on the replica. To do so, the primary node simply runs \cref{protocol:rbsr} as-is, and the replica node runs a slightly modified version: whenever it receives a range item set $\iis{x}{y}{S}{b}$, it removes from its local set $X_i$ all items in $\range{x}{y}{X_i} \setminus S$; and whenever it sends a range item set itself, it sends the empty set.
 
@@ -741,7 +721,7 @@ Because all items within the range are descendents of $init$ and $x \preceq init
 	&\f(\tv{init}) \groupaddsym \lift{\f}{\mathcal{M}}\bigl(\set{z \in \V(\tr{init}) \mid z \prec y}\bigr).
 \end{align*}
 
-Procedure \textproc{aggregate\_left} demonstrates how to compute $\lift{\f}{\mathcal{M}}\bigl(\set{z \in \V(\tl{init}) \mid z \succeq x}\bigr)$: starting from the initial vertex, we search for $x$, accumulating the labels of all right children, as well as the monoid values that correspond to those vertices on the search path that are greater than or equal to $x$. Similarly, procedure \textproc{aggregate\_right} computes $\lift{\f}{\mathcal{M}}\bigl(\set{z \in \V(\tr{init}) \mid z \prec y}\bigr)$. \Cref{fig:aggregate_once} depicts an example run.
+The procedure \textproc{aggregate\_left} demonstrates how to compute $\lift{\f}{\mathcal{M}}\bigl(\set{z \in \V(\tl{init}) \mid z \succeq x}\bigr)$: starting from the initial vertex, we search for $x$, accumulating the labels of all right children, as well as the monoid values that correspond to those vertices on the search path that are greater than or equal to $x$. Similarly, the procedure \textproc{aggregate\_right} computes $\lift{\f}{\mathcal{M}}\bigl(\set{z \in \V(\tr{init}) \mid z \prec y}\bigr)$. \Cref{fig:aggregate_once} depicts an example run.
 
 \begin{algorithm}
 	\caption{Computing $\lift{\f}{\mathcal{M}}\bigl(\range{x}{y}{\V(t)}\bigr)$.}\label{alg:aggregate_once}
@@ -939,7 +919,7 @@ Overall, the computations for processing a single range fingerprint for a local 
 
 When computing fingerprints for several ranges, we can reduce the overall time complexity if the ranges are sorted by their lower boundaries in ascending order. We can accumulate labels while traversing from the lower boundary of each range to its upper boundary; then we traverse to the lower boundary of the next range, ready to process it. In this traversal, any edge is traversed at most twice, giving an upper bound for processing a single message of $\complexity{n}$.
 
-Processing any individual range this way still requires $\complexity{\log(n)}$ time, since the maximum distance between two vertices in a balanced tree on $n$ vertices is in $\complexity{\log(n)}$. Overall, the time complexity for a single communication round is hence in $\complexity{\min(n, n_{\triangle} \cdot \log(n))}$. This can result in a logarithmic speed-up compared to prior discussion of range-based set reconciliation (\cite{chen1999prototype}\cite{shang2017survey}).
+Processing any individual range this way still requires $\complexity{\log(n)}$ time, since the maximum distance between two vertices in a balanced tree on $n$ vertices is in $\complexity{\log(n)}$. Overall, the time complexity for a single communication round is hence in $\complexity{\min(n, n_{\triangle} \cdot \log(n))}$. This can result in a logarithmic speed-up compared to prior presentations of range-based set reconciliation (\cite{chen1999prototype}\cite{shang2017survey}).
 
 % The maximum distance between two vertices in a balanced tree on $n$ vertices is in $\complexity{\log(n)}$. Processing any individual range this way thus requires $\complexity{\log(n)}$ time, just like our previous approach. Notice however that, when traversing the tree for successive sorted ranges, every edge is traversed at most twice. The time complexity for traversing multiple ranges in sequence is thus at most in $\complexity{n}$. Using this approach, we can hence bound the time complexity for a single communication round by $\complexity{\min(n_i, n_{\triangle} \cdot \log(n_i))}$. This can result in a logarithmic speed-up compared to prior discussion of range-based set reconciliation (\cite{chen1999prototype}\cite{shang2017survey}).
 
@@ -1002,15 +982,15 @@ The path from some lower boundary $x$ to some upper boundary $y$ consists of som
 
 \subsection{Impact of Hash Collisions}
 
-We distinguish between \defined{active} adversaries who can select the sets to be reconciled, and \defined{passive} adversaries who needs to find and cause collisions in existing sets. If fingerprints are bit strings of length $k$, every set of size at least $k + 1$ contains two subsets with the same fingerprint. We primarily focus on active adversaries, as they are more powerful.
+We distinguish between \defined{active} adversaries who can freely select the sets to be reconciled, and \defined{passive} adversaries who needs to find and cause collisions in existing sets. If fingerprints are bit strings of length $k$, every set of size at least $k + 1$ contains two subsets with the same fingerprint. We primarily focus on active adversaries, as they are more powerful.
 
 Fingerprint collisions result in parts of the set not being synchronized, so information is being withheld from one or both of the nodes. When a malicious node synchronizes with an honest one, the malicious node can withhold arbitrary information by simply pretending not to have certain data, which does not require finding collisions at all. So the actually interesting cases are those where a malicious node can cause honest nodes to incompletely reconcile amongst themselves.
 
-Specifically: let $\mathcal{M}$ be a malicious node, $\mathcal{A}$ and $\mathcal{B}$ be honest nodes, then a successful attack consists of $\mathcal{M}$ crafting sets $X_A, X_B$ and sending these to $\mathcal{A}$ and $\mathcal{B}$ respectively, so that when $\mathcal{A}$ and $\mathcal{B}$ then reconcile, they end up with distinct sets. A passive adversary does not craft $X_A, X_B$ but must find them as subsets of some set $X$ supplied by an honest node.
+Specifically: let $\mathcal{M}$ be a malicious node, $\mathcal{A}$ and $\mathcal{B}$ be honest nodes, then a successful attack consists of $\mathcal{M}$ crafting sets $X_A, X_B$ and sending these to $\mathcal{A}$ and $\mathcal{B}$ respectively, so that when $\mathcal{A}$ and $\mathcal{B}$ then reconcile, they end up with distinct sets. A passive adversary does not \textit{craft} $X_A, X_B$ but must \textit{find} them as subsets of some set $X$ supplied by an honest node.
 
 Let $S_A \subseteq X_A$ and $S_B \subseteq X_B$ be nonequal sets with the same fingerprint. To have any impact on the correctness of a particular protocol run, their two fingerprints need to actually be compared during that run. For that to happen, there have to be $x, y \in U$ such that $S_A = \range{x}{y}{X_A}$ and $S_B = \range{x}{y}{X_B}$. This alone is not sufficient, as only a low number of pairs of such sets are actually compared in a single run.
 
-Nodes can randomize the split points when determining subranges to bound the probability that a given pair of colliding sets is compared in a single protocol run. They can, e.g., split ranges into evenly sized subranges first, but then randomly shift range boundaries by a small number of items. This preserves a logarithmic number of communication rounds in the worst case. They can even choose $b$ subrange boundaries fully at random. The expected number of communication rounds is in $\complexity{\log_b(n)} = \complexity{\log(n)}$ with high probability, as it corresponds to the height of a randomly chosen $b$-complete tree~\cite{devroye1990height}.
+Nodes can randomize the split points when determining subranges to reduce the probability that a given pair of colliding sets is compared in a single protocol run. They can, for example, split ranges into evenly sized subranges first, but then randomly shift range boundaries by a small number of items. This preserves a logarithmic number of communication rounds in the worst case. They can even choose $b$ subrange boundaries fully at random. The expected number of communication rounds is in $\complexity{\log_b(n)} = \complexity{\log(n)}$ with high probability, as it corresponds to the height of a randomly chosen $b$-complete tree~\cite{devroye1990height}.
 
 This argument is however only qualitative and should be enjoyed with caution. A strong attacker might be able to find many pairs of sets of colliding fingerprints, or many sets that all share the same fingerprint.
 
